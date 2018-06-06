@@ -1,0 +1,57 @@
+class Constants:
+	#File Path
+	AN_CKPT_PATH = "../data/ckpt/actor/"
+	CN_CKPT_PATH = "../data/ckpt/critic/"
+	PM_READ_PATH = "../base/constants.py"
+	PM_WRITE_PATH = "../data/ckpt/parameter/"
+	RM_PATH = "../data/ckpt/replaymemory/"
+	EVAL_PATH = "../data/ckpt/evaluation/"
+
+	#Neural Network
+	CRITIC_EPSILON = 1.e-01
+	REWARD_DECAY = 0.99
+
+	ACT_LEARNING_RATE = 1.0 * 1e-4
+	CRI_LEARNING_RATE = 1.0 * 1e-3
+
+	TAU = 1.0* 1e-3
+	BATCH_SIZE= 64
+
+	#Simulation Environment
+	WINDOW_WIDTH = 1260
+	WINDOW_HEIGHT = 680
+
+	MAX_STEP = 400
+	MEMORY_SIZE = 100000
+
+	EXPLORATION_RATE = 0.9
+	EXPLORATION_DECAY = 0.9
+
+	WARMUP_ITERATION = 30
+	TRAIN_ITERATION =10000
+
+	LOSS_ITERATION = 10
+	SOFT_UPDATE_ITERATION = 1
+
+	#Simulation Constants
+	AGENT_FOV = 190
+	AGENT_COUNT = 1
+	AGENT_RADIUS = 10
+	AGENT_COLOR = [1.0, 0.0, 0.0]
+	AGENT_BODY_DIMENSION = 4
+	AGENT_SENSOR_INTERVAL = 10
+	AGENT_SENSOR_DIMENSION = AGENT_FOV/AGENT_SENSOR_INTERVAL + 1
+	AGENT_ACTION_DIMENSION = 2
+
+	OBSTACLE_COUNT = 1
+	OBSTACLE_RADIUS = 10
+	OBSTACLE_COLOR = [0.7, 0.7, 0.7]
+	OBSTACLE_PENALTY =-1
+
+	VISION_DEPTH = 300
+	DELTA_TIME = 0.1
+
+	#Evaluation
+	EVALUTAION_SET = 6
+
+	DEBUG_MODE = True

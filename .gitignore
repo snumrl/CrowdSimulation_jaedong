@@ -1,7 +1,6 @@
 *.pyc
 *.ckpt
 *.txt
-srcs/data/ckpt/actor/*
-srcs/data/ckpt/critic/*
+*.ckpt.*
 ckeckpoint
 

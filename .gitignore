@@ -1,2 +1,3 @@
 *.pyc
-srcs/data/*
+srcs/data/ckpt/*
+

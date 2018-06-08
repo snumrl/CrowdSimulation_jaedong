@@ -6,6 +6,8 @@ from constants import Constants as cst
 from time import localtime, strftime
 from ddpg import DDPG
 from basic import Basic
+from corridor import Corridor
+
 
 import csim
 
@@ -21,8 +23,8 @@ FLAG_M_REPLAY_SAVE = True
 class Experiment_Offline:
 	def __init__(self):
 
-		self.SCENARIO = 'Basic'
-		# self.SCENARIO = 'Corridor'
+		#self.SCENARIO = 'Basic'
+		self.SCENARIO = 'Corridor'
 		# self.SCENARIO = 'Bottleneck'
 		# self.SCENARIO = 'Crossway'
 
@@ -37,16 +39,28 @@ class Experiment_Offline:
 	def setEnvironment(self, SCENARIO):
 		if SCENARIO == 'Basic':
 			self.Parser = csim.Parser("Basic")
+		elif SCENARIO == 'Corridor':
+			self.Parser = csim.Parser("Corridor")
+		elif SCENARIO == 'Bottleneck':
+			self.Parser = csim.Parser("Bottleneck")
+		elif SCENARIO == 'Crossway':
+			self.Parser = csim.Parser("Crossway")
 
 		obs = self.Observe()
 
 		if SCENARIO == 'Basic':
 			self.Scenario = Basic(obs)
+		elif SCENARIO == 'Corridor':
+			self.Scenario = Corridor(obs)
+		# elif SCENARIO == 'Bottleneck':
+		# 	self.Scenario = Bottleneck(obs)
+		# elif SCENARIO == 'Crossway':
+		# 	self.Scenario = Crossway(obs)
 
 	def setNetwork(self):
 		network_dim = []
 		network_dim.append(4)
-		network_dim.append(40)
+		network_dim.append(60)
 		network_dim.append(2)
 		self.Algorithm = DDPG(network_dim)
 
@@ -85,8 +99,6 @@ class Experiment_Offline:
 			while not self.isTerm:
 				obs, action, memory = self.Execute(action_type='GREEDY', run_type='TRAIN')
 				memory['obs'] = self.convert_to_numpy(memory['obs'])
-				# print "p: ", memory['obs']['agent'][0]['p']
-				# print "d: ", memory['obs']['agent'][0]['d']
 
 				if memory['isTerm']:
 					self.isTerm = True
@@ -106,19 +118,20 @@ class Experiment_Offline:
 		print "Iteration : ", self.train_iter
 		print "========================================="
 
+		self.Parser.Reset(-1)
+		self.isTerm = False
 		step_count=0
 		for iteration in range(1, self.train_iter):
 			if self.isTerm:
 				print "Reset New Episode : ", step_count," Steps"
-				step_count=0
 				self.Algorithm.expl_rate_decay()
 
 				self.isTerm = False
+				step_count=0
 				if self.flag_eval:
-					self.episode_evaluation()
 					self.flag_eval=False
-				else:
-					self.Parser.Reset(-1)
+					self.episode_evaluation()
+				self.Parser.Reset(-1)
 
 			obs, action, memory = self.Execute(action_type='ACTOR', run_type='TRAIN')
 			memory['obs'] = self.convert_to_numpy(memory['obs'])
@@ -127,7 +140,7 @@ class Experiment_Offline:
 			if memory['isTerm']:
 				self.isTerm = memory['isTerm']
 
-			step_count+=1
+			step_count += 1
 
 			if self.train_iter<10 or iteration%(self.train_iter/10) == 0:
 				print "\n", iteration/(float)(self.train_iter/10)*10, "% Done...\n"
@@ -180,7 +193,7 @@ class Experiment_Offline:
 			obs['agent'][i]['q'] = np.array(obs['agent'][i]['q'])
 			obs['agent'][i]['d'] = np.array(obs['agent'][i]['d'])
 			obs['agent'][i]['front'] = obs['agent'][i]['front'][0]
-			obs['agent'][i]['delta'] = np.array(obs['agent'][i]['delta'])
+			obs['agent'][i]['v_map'] = np.array(obs['agent'][i]['v_map'])
 			obs['agent'][i]['d_map'] = np.array(obs['agent'][i]['d_map'])
 
 		obstacle_num = len(obs['obstacle'])

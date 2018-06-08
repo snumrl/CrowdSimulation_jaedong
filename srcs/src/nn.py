@@ -51,7 +51,7 @@ class ActorNetwork():
 
 	def create_actor_network(self):
 		input_body = tflearn.input_data(shape=[None, 4])
-		input_sensor = tflearn.input_data(shape=[None, 40])
+		input_sensor = tflearn.input_data(shape=[None, 60])
 
 		body_net = tflearn.fully_connected(input_body, 32)
 		body_net = tflearn.layers.normalization.batch_normalization(body_net)
@@ -161,7 +161,7 @@ class CriticNetwork():
 
 	def create_critic_network(self):
 		input_body = tflearn.input_data(shape=[None, 4])
-		input_sensor = tflearn.input_data(shape=[None, 40])
+		input_sensor = tflearn.input_data(shape=[None, 60])
 		action = tflearn.input_data(shape=[None, self.a_dim])
 
 		body_net = tflearn.fully_connected(input_body, 32)

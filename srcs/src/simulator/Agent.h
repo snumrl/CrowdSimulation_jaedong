@@ -13,7 +13,7 @@ class Agent{
 		double _front = 0.0;
 		int _qlim = 20;
 		double* _dmap;
-		double* _delta;
+		double* _vmap;
 		double _depth = 300.0;
 		int _interval = 10;
 		bool _col = false;
@@ -43,7 +43,7 @@ class Agent{
 		void setFront(double f) {_front = f;};
 		void setQlim(int q) {_qlim = q;};
 		void setDmap(double* d) {_dmap = d;};
-		void setDelta(double* d) {_delta = d;};
+		void setVmap(double* v) {_vmap = v;};
 		void setDepth(double d) {_depth = d;};
 		void setInterval(int i) {_interval = i;};
 		void setCol(bool c) {_col = c;};
@@ -60,7 +60,7 @@ class Agent{
 		double getFront() {return _front;};
 		int getQlim() {return _qlim;};
 		double* getDmap() {return _dmap;};
-		double* getDelta() {return _delta;};
+		double* getVmap() {return _vmap;};
 		double getDepth() {return _depth;};
 		int getInterval() {return _interval;};
 		bool getCol() {return _col;};

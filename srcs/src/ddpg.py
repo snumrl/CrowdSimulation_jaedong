@@ -11,7 +11,6 @@ import copy
 import pickle
 import tensorflow as tf
 
-
 from nn import CriticNetwork, ActorNetwork
 from time import localtime, strftime
 from constants import Constants as cst
@@ -102,7 +101,9 @@ class DDPG:
 			else:
 				action = self.get_action(agent_obs, run_type=='TEST')
 				if self.expl:
+					print "action : ", action
 					action = self.action_random(action)
+					print "action noise : ", action
 
 			action_list.append(action)
 
@@ -409,7 +410,7 @@ class DDPG:
 	def preprocess(self, agent_obs):
 		state = {}
 		state['body'] = np.array(self.preprocess_body(agent_obs['p'], agent_obs['q'], agent_obs['v'], agent_obs['d'])).reshape((1, self.dim_body))
-		state['sensor'] = np.array(self.preprocess_sensor(agent_obs['d_map'], agent_obs['delta'], 20, cst.VISION_DEPTH)).reshape((1, 40))
+		state['sensor'] = np.array(self.preprocess_sensor(agent_obs['d_map'], agent_obs['v_map'], 20, cst.VISION_DEPTH)).reshape((1, 60))
 
 		return state
 
@@ -443,15 +444,13 @@ class DDPG:
 
 		return [v, inner, cross_val, pd_len]
 
-	def preprocess_sensor(self, d_map, delta_map, q_lim, vision_depth):
-		depth = [d/float(vision_depth) for d in d_map]
-		delta = [d/float(vision_depth) for d in delta_map]
+	def preprocess_sensor(self, d_map, v_map, q_lim, vision_depth):
+		d_map_ = np.divide(d_map, vision_depth, dtype=float)
+		v_map_ = np.reshape(v_map, 40)
 
-		# print "depth : ", depth
-		# print "delta : ", delta
+		sensor = np.append(d_map_, v_map_)
 
-		sensor = depth + delta
-		return np.array(sensor)
+		return sensor
 
 	def get_agent_count(self, is_train, obs):
 		if is_train:

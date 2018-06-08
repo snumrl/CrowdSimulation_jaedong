@@ -1,21 +1,34 @@
 #include <iostream>
 #include <ctime>
-#include "mMath.h"
-#include "Basic.h"
+#include "../mMath.h"
+#include "Corridor.h"
 
 using namespace std;
 
-Basic::Basic(int agent_n, int obs_n)
+Corridor::Corridor(int agent_n, int obs_n)
 {
 	agent_num = agent_n;
 	obstacle_num = obs_n;
 
 	initEvaluation();
 
+	double st1[2] = {-600, 250};
+	double p1[2] = {1.0, 0.0};
+	double l1 = 1200;
+	Wall* w1 = new Wall(st1, p1, l1);
+
+	double st2[2] = {-600, -250};
+	double p2[2] = {1.0, 0.0};
+	double l2 = 1200;
+	Wall* w2 = new Wall(st2, p2, l2);
+
+	addWall(w1);
+	addWall(w2);
+
 	Reset(-1);
 }
 
-Basic::~Basic()
+Corridor::~Corridor()
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
 	{
@@ -30,7 +43,7 @@ Basic::~Basic()
 	_obstacles.clear();
 }
 
-void Basic::initEvaluation()
+void Corridor::initEvaluation()
 {
 	int eval_set_num = 6;
 
@@ -73,7 +86,7 @@ void Basic::initEvaluation()
 	}
 }
 
-void Basic::Reset(int idx)
+void Corridor::Reset(int idx)
 {
 	if(idx == -1)
 		ResetEnv();
@@ -81,7 +94,7 @@ void Basic::Reset(int idx)
 		ResetEval(idx);
 }
 
-void Basic::ResetEval(int idx)
+void Corridor::ResetEval(int idx)
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
 	{
@@ -95,6 +108,12 @@ void Basic::ResetEval(int idx)
 	}
 	_obstacles.clear();
 
+	for(vector< Wall* >::iterator it = _walls.begin() ; it != _walls.end(); it++)
+	{
+		delete (*it);
+	}
+	_walls.clear();
+
 	for(int i=0; i<agent_num; i++)
 	{
 		Agent* agent = new Agent(); // p q d
@@ -102,7 +121,8 @@ void Basic::ResetEval(int idx)
 		agent->setPprev(eval_agent_p_x.at(idx*agent_num + i), eval_agent_p_y.at(idx*agent_num + i));
 		agent->setD(eval_agent_d_x.at(idx*agent_num + i), eval_agent_d_y.at(idx*agent_num + i));
 
-		if(i < agent_num/2)
+		// if(i < agent_num/2)
+		if(i < agent_num)
 		{
 			agent->setQ(1.0, 0.0);
 			agent->setFront(0.0);
@@ -118,13 +138,13 @@ void Basic::ResetEval(int idx)
 			dmap[j] = _vision_depth;
 		}
 
-		double* delta = new double[20];
-		for(int j=0; j<20; j++){
-			delta[j] = 0.0;
+		double* vmap = new double[40];
+		for(int j=0; j<40; j++){
+			vmap[j] = 0.0;
 		}
 
 		agent->setDmap(dmap);
-		agent->setDelta(delta);
+		agent->setVmap(vmap);
 
 		addAgent(agent);
 	}
@@ -140,7 +160,7 @@ void Basic::ResetEval(int idx)
 	_cur_step = 0;
 }
 
-void Basic::ResetEnv()
+void Corridor::ResetEnv()
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
 		delete (*it);
@@ -156,46 +176,79 @@ void Basic::ResetEnv()
 
 	int rand_x;
 	int rand_y;
+	double pos[2];
+	bool col = false;
 	Agent* agent;
 	for(int i=0; i<agent_num; i++)
 	{
-		rand_x = rand()%100;
-		rand_y = rand()%200;
 
-		if(i < agent_num/2)
+		while(true)
 		{
-			agent = new Agent(); // p q d
-			agent->setP(-300.0 + rand_x, -100.0 + rand_y);
-			agent->setPprev(-300.0 + rand_x, -100.0 + rand_y);
-			agent->setD(250.0, -200.0 + rand_y);
+			rand_x = rand()%100;
+			rand_y = rand()%200;
+
+			// if(i < agent_num/2)
+			if(i < agent_num)
+			{
+				pos[0] = -300 + rand_x;
+				pos[1] = -100 + rand_y;
+			}
+			else
+			{
+				pos[0] = 200 + rand_x;
+				pos[1] = -100 + rand_y;
+			}
+
+			col = false;
+			int start_idx = 0;
+			// if(i > agent_num/2)
+			if(i > agent_num)
+				start_idx = agent_num/2;
+
+			for(int j=start_idx; j<i; j++)
+			{
+				if(Dist(pos, getAgent(j)->getP()) < 20)
+				{
+					col = true;
+					break;
+				}
+			}
+
+			if(col == false)
+				break;
+		}
+
+		agent = new Agent(); // p q d
+		agent->setP(pos[0], pos[1]);
+		agent->setPprev(pos[0], pos[1]);
+		// if(i < agent_num/2)
+		if(i < agent_num)
+		{
+			agent->setD(400.0, -100 + rand()%200);
 			agent->setQ(1.0, 0.0);
 			agent->setFront(0.0);
 			agent->setColor(0.8, 0.2, 0.2);
 		}
 		else
 		{
-			agent = new Agent(); // p q d
-			agent->setP(200.0 + rand_x, -100.0 + rand_y);
-			agent->setPprev(200.0 + rand_x, -100.0 + rand_y);
-			agent->setD(-250.0, -200.0 + rand_y);
+			agent->setD(-300.0, -100 + rand()%200);
 			agent->setQ(-1.0, 0.0);
 			agent->setFront(180.0);
 			agent->setColor(0.2, 0.8, 0.2);
 		}
-
 
 		double* dmap = new double[20];
 		for(int j=0; j<20; j++){
 			dmap[j] = _vision_depth;
 		}
 
-		double* delta = new double[20];
-		for(int j=0; j<20; j++){
-			delta[j] = 0.0;
+		double* vmap = new double[40];
+		for(int j=0; j<40; j++){
+			vmap[j] = 0.0;
 		}
 
 		agent->setDmap(dmap);
-		agent->setDelta(delta);
+		agent->setVmap(vmap);
 
 		addAgent(agent);
 	}
@@ -215,7 +268,7 @@ void Basic::ResetEnv()
 	_cur_step = 0;
 }
 
-void Basic::Render()
+void Corridor::Render()
 {
 	for(int i=0; i<agent_num; i++)
 	{

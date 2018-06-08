@@ -4,6 +4,7 @@
 #include <vector>
 #include "Agent.h"
 #include "Obstacle.h"
+#include "Wall.h"
 
 using namespace std;
 
@@ -11,6 +12,7 @@ class Env{
 	protected:
 		vector<Agent* >  _agents;
 		vector<Obstacle* >  _obstacles;
+		vector<Wall* >  _walls;
 
 		int agent_num;
 		int obstacle_num;
@@ -35,23 +37,26 @@ class Env{
 		double getScore();
 		bool isTerm(bool isTest);
 
-		double depth_by_obstacles(double* angle, Agent* agent, double cur_d);
-		double depth_by_agents(double* angle, Agent* agent, double cur_d, int idx);
+		void depth_by_obstacles(double* angle, Agent* agent, double* _map);
+		void depth_by_agents(double* angle, Agent* agent,  double* _map, int idx);
+		void depth_by_walls(double* angle, Agent* agent,  double* _map);
 
 		// Object
-
 		void addAgent(Agent* agent);
 		void addObstacle(Obstacle* obstacle);
+		void addWall(Wall* wall);
 
 		const vector<Agent*> & getAgents();
 		const vector<Obstacle*> & getObstacles();
+		const vector<Wall*> & getWalls();
 
 		Agent* getAgent(int id);
 		Obstacle* getObstacle(int id);
+		Wall* getWall(int id);
 
 		int getNumAgents() const;
 		int getNumObstacles() const;
-
+		int getNumWalls() const;
 };
 
 #endif

@@ -16,7 +16,7 @@ Agent::Agent()
 Agent::~Agent()
 {
 	delete _dmap;
-	delete _delta;
+	delete _vmap;
 }
 
 void Agent::Update(double* p)

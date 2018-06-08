@@ -62,6 +62,9 @@ class Agent(CrowdObject):
 	def setDmap(self, d_map = None):
 		self.d_map = np.array(d_map, dtype=float)
 
+	def setVmap(self, d_map = None):
+		self.v_map = np.array(v_map, dtype=float)
+
 	def setColor(self, color = None):
 		self.color = np.array(color, dtype=float)
 
@@ -72,7 +75,7 @@ class Agent(CrowdObject):
 		self.v = state['v']
 		self.color = state['color']
 		self.front = state['front']
-		self.delta = state['delta']
+		self.v_map = state['v_map']
 		self.d_map = state['d_map']
 
 		self.r = cst.AGENT_RADIUS

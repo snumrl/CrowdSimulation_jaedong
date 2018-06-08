@@ -1,13 +1,19 @@
+import sys
+sys.path.append('../base')
+
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 import csim
 import numpy as np
+from constants import Constants as cst
 from ddpg import DDPG
 from basic import Basic
+from corridor import Corridor
 
-FLAG_USE_RECENT_CKPT = True
+FLAG_USE_RECENT_CKPT = False
+FLAG_USE_REPLAY_MEMORY = False
 FLAG_WARMUP_FOR_TRAINING = False
 
 class Experiment:
@@ -17,8 +23,8 @@ class Experiment:
 		self.initGL()
 		self.initFlag()
 
-		SCENARIO = 'Basic'
-		# SCENARIO = 'Corridor'
+		#SCENARIO = 'Basic'
+		SCENARIO = 'Corridor'
 		# SCENARIO = 'Bottleneck'
 		# SCENARIO = 'Crossway'
 
@@ -27,7 +33,7 @@ class Experiment:
 
 		if FLAG_USE_RECENT_CKPT:
 			print "Load Network"
-			self.load_network()
+			self.load_network(m_replay = FLAG_USE_REPLAY_MEMORY)
 		else:
 			print "New Network"
 
@@ -77,8 +83,8 @@ class Experiment:
 
 		if SCENARIO == 'Basic':
 			self.Scenario = Basic(obs)
-		# elif SCENARIO == 'Corridor':
-		# 	self.Scenario = Corridor(obs)
+		elif SCENARIO == 'Corridor':
+			self.Scenario = Corridor(obs)
 		# elif SCENARIO == 'Bottleneck':
 		# 	self.Scenario = Bottleneck(obs)
 		# elif SCENARIO == 'Crossway':
@@ -87,7 +93,7 @@ class Experiment:
 	def setNetwork(self):
 		network_dim = []
 		network_dim.append(4)
-		network_dim.append(40)
+		network_dim.append(60)
 		network_dim.append(2)
 		self.Algorithm = DDPG(network_dim)
 
@@ -127,7 +133,7 @@ class Experiment:
 		self.warmup_iter = cst.WARMUP_ITERATION
 		for i in range(self.warmup_iter):
 			if self.warmup_iter<10 or i%(self.warmup_iter/10)==0:
-				log("Warmup Generation...\t"+str((i / (float)(self.warmup_iter))*100)+"%")
+				print "Warmup Generation...\t"+str((i / (float)(self.warmup_iter))*100)+"%"
 
 			self.isTerm = False
 			self.Parser.Reset(-1)
@@ -138,7 +144,7 @@ class Experiment:
 				if memory['isTerm']:
 					self.isTerm = True
 
-				self.Scenario.setObjecytData(memory['obs'])
+				self.Scenario.setObjectData(memory['obs'])
 				self.Update('GREEDY', obs, action, memory)
 
 		self.flag['warmup']=False
@@ -149,14 +155,14 @@ class Experiment:
 	def convert_to_numpy(self, obs):
 		agent_num = len(obs['agent'])
 		for i in range(agent_num):
-			obs['agent'][i]['d_map'] = np.array(obs['agent'][i]['d_map'])
-			obs['agent'][i]['d'] = np.array(obs['agent'][i]['d'])
-			obs['agent'][i]['delta'] = np.array(obs['agent'][i]['delta'])
-			obs['agent'][i]['q'] = np.array(obs['agent'][i]['q'])
-			obs['agent'][i]['p'] = np.array(obs['agent'][i]['p'])
 			obs['agent'][i]['v'] = obs['agent'][i]['v'][0]
 			obs['agent'][i]['front'] = obs['agent'][i]['front'][0]
+			obs['agent'][i]['d'] = np.array(obs['agent'][i]['d'])
+			obs['agent'][i]['q'] = np.array(obs['agent'][i]['q'])
+			obs['agent'][i]['p'] = np.array(obs['agent'][i]['p'])
 			obs['agent'][i]['color'] = np.array(obs['agent'][i]['color'])
+			obs['agent'][i]['d_map'] = np.array(obs['agent'][i]['d_map'])
+			obs['agent'][i]['v_map'] = np.array(obs['agent'][i]['v_map'])
 
 		obstacle_num = len(obs['obstacle'])
 		for i in range(obstacle_num):
@@ -192,6 +198,7 @@ class Experiment:
 				self.Scenario.setObjectData(memory['obs'])
 
 				if memory['isTerm']:
+					self.isTerm = True
 					self.Parser.Reset(-1)
 
 				self.Update('ACTOR', obs, action, memory)
@@ -202,6 +209,7 @@ class Experiment:
 				else:
 					obs, action, memory = self.Execute(action_type='ACTOR', run_type='TEST')
 
+				memory['obs'] = self.convert_to_numpy(memory['obs'])
 				self.Scenario.setObjectData(memory['obs'])
 
 				if memory['isTerm']:
@@ -238,7 +246,7 @@ class Experiment:
 			elif key == 'd':
 				if self.flag['train']:
 					print "Stopped Training...!"
-					self.save_network()
+					self.save_network(m_replay = True)
 				else:
 					print "Start Training...!"
 				self.flag['train'] = not self.flag['train']

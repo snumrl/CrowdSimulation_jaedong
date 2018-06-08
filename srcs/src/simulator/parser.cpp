@@ -1,21 +1,26 @@
 #include <iostream>
 #include <vector>
 
-#include "Basic.h"
 #include "parser.h"
+#include "scenario/Basic.h"
+#include "scenario/Corridor.h"
 
 using namespace boost::python;
 using namespace std;
 
 #define AGENT_NUM 1
-#define OBSTACLE_NUM 8
+#define OBSTACLE_NUM 0
 
 Parser::Parser(string Scenario)
 {
 	cout << "Scenario : " << Scenario << endl;
 
-	if(Scenario.compare("Basic") == 0)
+	if(Scenario.compare("Basic") == 0){
 		_env = new Basic(AGENT_NUM, OBSTACLE_NUM);
+	}
+	else if(Scenario.compare("Corridor") == 0){
+		_env = new Corridor(AGENT_NUM, OBSTACLE_NUM);
+	}
 }
 
 Parser::~Parser()
@@ -107,13 +112,13 @@ dict Parser::Observe()
 		}
 		cur_agent_state["d_map"] = dmap_list;
 
-		list delta_list;
-		double* cur_delta = cur_agent->getDelta();
-		for(int i=0; i<20; i++)
+		list vmap_list;
+		double* cur_vmap = cur_agent->getVmap();
+		for(int i=0; i<40; i++)
 		{
-			delta_list.append(cur_delta[i]);
+			vmap_list.append(cur_vmap[i]);
 		}
-		cur_agent_state["delta"] = delta_list;
+		cur_agent_state["v_map"] = vmap_list;
 
 		agent_state.append(cur_agent_state);
 	}

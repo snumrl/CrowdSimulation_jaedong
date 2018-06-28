@@ -6,6 +6,8 @@
 
 using namespace std;
 
+#define PI 3.141592
+
 Env::Env()
 {
 	cout << "Env()" << endl;
@@ -27,17 +29,22 @@ const vector<Agent*> & Env::Observe()
 		double* d_map = cur_agent->getDmap();
 		double* v_map = cur_agent->getVmap();
 
-		double angle_v[2];
-		double tmp_map[3];
+		#pragma omp parallel for
 		for(int j=0; j<20; j++)
 		{
+			double cur_radian;
+			double angle_v[2];
+			double tmp_map[3];
+
 			tmp_map[0] = _vision_depth;
 			tmp_map[1] = 0.0;
 			tmp_map[2] = 0.0;
-			AngleToCoor(cur_agent->getFront() + cur_agent->getFov()/2 - j*cur_agent->getInterval(), angle_v);
+			// AngleToCoor(cur_agent->getFront() + cur_agent->getFov()/2 - j*cur_agent->getInterval(), angle_v);
+			cur_radian = cur_agent->getFront() + (cur_agent->getFov()/2 - j*cur_agent->getInterval())/180.0*PI;
+			RadianToCoor(cur_radian, angle_v);
 			depth_by_agents(angle_v, cur_agent, tmp_map, i);
 			depth_by_obstacles(angle_v, cur_agent, tmp_map);
-			depth_by_walls(angle_v, cur_agent, tmp_map);
+			depth_by_walls(angle_v, cur_agent, tmp_map, i);
 
 			d_map[j] = tmp_map[0];
 			v_map[2*j] = tmp_map[1];
@@ -118,7 +125,7 @@ void Env::depth_by_agents(double* angle, Agent* agent,  double* _map, int idx)
 	_map[2] = cur_v[1];
 }
 
-void Env::depth_by_walls(double* angle, Agent* agent, double* _map)
+void Env::depth_by_walls(double* angle, Agent* agent, double* _map, int idx)
 {
 	bool isNew = false;
 
@@ -186,7 +193,7 @@ void Env::depth_by_walls(double* angle, Agent* agent, double* _map)
 			}
 		}
 
-		double boundary = agent->getR() + 1.0;
+		double boundary = agent->getR();
 		double cur_dist = RayToSphereDistance(agent_pos, cur_wall->getSt(), angle, boundary);
 
 		if(cur_dist >= 0 && cur_dist < cur_d)
@@ -240,7 +247,7 @@ void Env::Update()
 				other_agent = _agents.at(j);
 
 				double d = Dist(cur_agent->getP(), other_agent->getP());
-				double r = cur_agent->getR() + other_agent->getR() + 1.0;
+				double r = cur_agent->getR() + other_agent->getR() + 0.1;
 				if(d < r)
 				{
 					isCol = true;
@@ -257,7 +264,7 @@ void Env::Update()
 			cur_obs = _obstacles.at(j);
 
 			double d = Dist(cur_agent->getP(), cur_obs->getP());
-			double r = cur_agent->getR() + cur_obs->getR() + 1.0;
+			double r = cur_agent->getR() + cur_obs->getR() + 0.1;
 			if(d < r)
 			{
 				isCol = true;
@@ -307,7 +314,7 @@ bool Env::isTerm(bool isTest)
 	if(_agents.at(0)->getCol())
 		return true;
 
-	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 20)
+	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 1.5)
 		return true;
 
 	if(_cur_step > _max_step)

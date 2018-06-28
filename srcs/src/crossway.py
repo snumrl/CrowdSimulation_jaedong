@@ -13,7 +13,7 @@ import Queue
 import copy
 import math
 
-class Corridor:
+class Crossway:
 	def __init__(self, obs):
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
@@ -45,8 +45,14 @@ class Corridor:
 
 	def init_walls(self):
 		self.walls = []
-		self.walls.append(Wall([-600, -65], [1, 0], cst.WINDOW_WIDTH))
-		self.walls.append(Wall([-600, 65], [1, 0], cst.WINDOW_WIDTH))
+		self.walls.append(Wall([-600, -250], [1, 0], 350))
+		self.walls.append(Wall([-600, 250], [1, 0], 350))
+		self.walls.append(Wall([250, -250], [1, 0], 350))
+		self.walls.append(Wall([250, 250], [1, 0], 350))
+		self.walls.append(Wall([-250, -250], [0, -1], 350))
+		self.walls.append(Wall([-250, 250], [0, 1], 350))
+		self.walls.append(Wall([250, -250], [0, -1], 350))
+		self.walls.append(Wall([250, 250], [0, 1], 350))
 
 	def init_record(self):
 		self.record_buffer_p = Queue.Queue(maxsize=5000)
@@ -80,21 +86,34 @@ class Corridor:
 		for i in range(1, self.agent_count):
 			self.agents[i].render(False, trajectory, i)
 
-		glColor3f(0.3, 0.3, 0.3)
-		glPushMatrix()
-		glTranslatef(0, 15, 2)
-		glScalef(60, 10, 4)
-		glutSolidCube(1.0)
-		glPopMatrix()
-
-		glPushMatrix()
-		glTranslatef(0, -15, 2)
-		glScalef(60, 10, 4)
-		glutSolidCube(1.0)
-		glPopMatrix()
-
 		for i in range(len(self.walls)):
 			self.walls[i].render()
+
+		glColor3f(0.3, 0.3, 0.3)
+		glPushMatrix()
+		glTranslatef(-500, 300, 20)
+		glScalef(600, 160, 40)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(-500, -280, 20)
+		glScalef(600, 160, 40)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(500, 280, 20)
+		glScalef(600, 160, 40)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(500, -280, 20)
+		glScalef(600, 160, 40)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
 
 	def record(self, flag=False):
 		if flag:

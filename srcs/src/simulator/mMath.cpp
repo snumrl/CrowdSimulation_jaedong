@@ -10,6 +10,22 @@ void AngleToCoor(double angle, double* coor)
 	coor[1] = sin( angle * PI / 180.0);
 }
 
+void RadianToCoor(double rad, double* coor)
+{
+	coor[0] = cos( rad );
+	coor[1] = sin( rad );
+}
+
+double CoorToAngle(double* coor)
+{
+	return atan2(coor[1], coor[0]) * 180.0 / (double)PI;
+}
+
+double CoorToRadian(double* coor)
+{
+	return atan2(coor[1], coor[0]);
+}
+
 double Dist(double* p1, double* p2)
 {
 	return sqrt(pow(p1[0]-p2[0], 2) + pow(p1[1]-p2[1], 2));
@@ -35,31 +51,10 @@ void MinWallOffset(Wall* w, Agent* agent, double* offset)
 
 	double* st = w->getSt();
 	double* ed = w->getEd();
+	double* n = w->getNormal();
 
-	if(st[0] == ed[0])
-	{
-		offset[1] = 0.0;
-		if(st[0] > p[0])
-			offset[0] = -r;
-		else
-			offset[0] = r;
-
-		return ;
-	}
-
-	if(st[1] == ed[1])
-	{
-		offset[0] = 0.0;
-		if(st[1] > p[1])
-			offset[1] = -r;
-		else
-			offset[1] = r;
-
-		return ;
-	}
-
-	offset[0] = 0;
-	offset[1] = 0;
+	offset[0] = r * n[0];
+	offset[1] = r * n[1];
 }
 
 double RayToSphereDistance(double* p1, double* p2, double* angle, double r)
@@ -79,10 +74,7 @@ double RayToSphereDistance(double* p1, double* p2, double* angle, double r)
 		return -1;
 
 	double dist;
-	if(dot_value < 0)
-		dist = -1*dot_value - sqrt(pow(r,2) - pow(d_len, 2));
-	else
-		dist = dot_value - sqrt(pow(r,2) - pow(d_len, 2));
+	dist = dot_value - sqrt(pow(r,2) - pow(d_len, 2));
 
 	if(dist < 0)
 		dist = 0;
@@ -161,6 +153,12 @@ void vec_mul_scalar(double* v, double s, double* result)
 {
 	result[0] = s * v[0];
 	result[1] = s * v[1];
+}
+
+void vec_divide_scalar(double* v, double s, double* result)
+{
+	result[0] = v[0] / s;
+	result[1] = v[1] / s;
 }
 
 double vec_norm(double* v)

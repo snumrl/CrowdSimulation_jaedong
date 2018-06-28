@@ -8,9 +8,11 @@ class ActorNetwork():
 	under a deterministic policy.
 	The output layer activation is a tanh to keep the action
 	"""
-	def __init__(self, sess, state_dim, action_dim, learning_rate, tau, batch_size):
+	def __init__(self, sess, body_dim, sensor_dim, action_dim, learning_rate, tau, batch_size):
 		self.sess = sess
-		self.s_dim = state_dim
+		self.body_dim = body_dim
+		self.sensor_dim = sensor_dim
+		self.s_dim = body_dim + sensor_dim
 		self.a_dim = action_dim
 		self.learning_rate = learning_rate
 		self.tau = tau
@@ -50,8 +52,8 @@ class ActorNetwork():
 		self.saver = tf.train.Saver()
 
 	def create_actor_network(self):
-		input_body = tflearn.input_data(shape=[None, 4])
-		input_sensor = tflearn.input_data(shape=[None, 60])
+		input_body = tflearn.input_data(shape=[None, self.body_dim])
+		input_sensor = tflearn.input_data(shape=[None, self.sensor_dim])
 
 		body_net = tflearn.fully_connected(input_body, 32)
 		body_net = tflearn.layers.normalization.batch_normalization(body_net)
@@ -120,9 +122,11 @@ class CriticNetwork():
 	Input to the network is the state and action, output is Q(s,a).
 	The action must be obtained from the output of the Actor network.
 	"""
-	def __init__(self, sess, state_dim, action_dim, learning_rate, tau, gamma, num_actor_vars):
+	def __init__(self, sess, body_dim, sensor_dim, action_dim, learning_rate, tau, gamma, num_actor_vars):
 		self.sess = sess
-		self.s_dim = state_dim
+		self.body_dim = body_dim
+		self.sensor_dim = sensor_dim
+		self.s_dim = body_dim + sensor_dim
 		self.a_dim = action_dim
 		self.learning_rate = learning_rate
 		self.tau = tau
@@ -160,8 +164,8 @@ class CriticNetwork():
 		self.saver = tf.train.Saver()
 
 	def create_critic_network(self):
-		input_body = tflearn.input_data(shape=[None, 4])
-		input_sensor = tflearn.input_data(shape=[None, 60])
+		input_body = tflearn.input_data(shape=[None, self.body_dim])
+		input_sensor = tflearn.input_data(shape=[None, self.sensor_dim])
 		action = tflearn.input_data(shape=[None, self.a_dim])
 
 		body_net = tflearn.fully_connected(input_body, 32)

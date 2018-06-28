@@ -13,11 +13,11 @@ import Queue
 import copy
 import math
 
-class Corridor:
+class Circle:
 	def __init__(self, obs):
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
-		self.init_walls();
+		self.init_walls()
 		self.init_record()
 
 	def init_agents(self, agent_obs):
@@ -45,8 +45,8 @@ class Corridor:
 
 	def init_walls(self):
 		self.walls = []
-		self.walls.append(Wall([-600, -65], [1, 0], cst.WINDOW_WIDTH))
-		self.walls.append(Wall([-600, 65], [1, 0], cst.WINDOW_WIDTH))
+		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, -200], [1, 0], cst.WINDOW_WIDTH))
+		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, 200], [1, 0], cst.WINDOW_WIDTH))
 
 	def init_record(self):
 		self.record_buffer_p = Queue.Queue(maxsize=5000)
@@ -68,6 +68,8 @@ class Corridor:
 			self.agents[i].setColor(agent_data[i]['color'])
 			self.agents[i].trajectory.append(agent_data[i]['p'])
 
+		# print "traj : ", self.agents[0].trajectory
+
 		obs_data = obs['obstacle']
 		for i in range(self.obstacle_count):
 			self.obstacles[i].setP(obs_data[i]['p'])
@@ -79,19 +81,6 @@ class Corridor:
 		self.agents[0].render(depth, trajectory, 0)
 		for i in range(1, self.agent_count):
 			self.agents[i].render(False, trajectory, i)
-
-		glColor3f(0.3, 0.3, 0.3)
-		glPushMatrix()
-		glTranslatef(0, 15, 2)
-		glScalef(60, 10, 4)
-		glutSolidCube(1.0)
-		glPopMatrix()
-
-		glPushMatrix()
-		glTranslatef(0, -15, 2)
-		glScalef(60, 10, 4)
-		glutSolidCube(1.0)
-		glPopMatrix()
 
 		for i in range(len(self.walls)):
 			self.walls[i].render()

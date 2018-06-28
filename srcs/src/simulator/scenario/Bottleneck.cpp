@@ -12,30 +12,48 @@ Bottleneck::Bottleneck(int agent_n, int obs_n)
 
 	initEvaluation();
 
-	double st1[2] = {-600, 250};
+	double st1[2] = {-600, 200};
 	double p1[2] = {1.0, 0.0};
+	double n1[2] = {0.0, -1.0};
 	double l1 = 600;
-	Wall* w1 = new Wall(st1, p1, l1);
+	Wall* w1 = new Wall(st1, p1, l1, n1);
 
-	double st2[2] = {0, 250};
-	double p2[2] = {1.0, 0.0};
-	double l2 = 600;
-	Wall* w2 = new Wall(st2, p2, l2);
+	double st2[2] = {0, 80};
+	double p2[2] = {0.0, 1.0};
+	double n2[2] = {-1.0, 0.0};
+	double l2 = 120;
+	Wall* w2 = new Wall(st2, p2, l2, n2);
 
-	double st3[2] = {-600, -250};
+	double st3[2] = {-600, -200};
 	double p3[2] = {1.0, 0.0};
+	double n3[2] = {0.0, 1.0};
 	double l3 = 600;
-	Wall* w3 = new Wall(st3, p3, l3);
+	Wall* w3 = new Wall(st3, p3, l3, n3);
 
-	double st4[2] = {0, -250};
-	double p4[2] = {1.0, 0.0};
-	double l4 = 600;
-	Wall* w4 = new Wall(st4, p4, l4);
+	double st4[2] = {0, -80};
+	double p4[2] = {0.0, -1.0};
+	double n4[2] = {-1.0, 0.0};
+	double l4 = 120;
+	Wall* w4 = new Wall(st4, p4, l4, n4);
+
+	double st5[2] = {0, 80};
+	double p5[2] = {1.0, 0.0};
+	double n5[2] = {0.0, -1.0};
+	double l5 = 600;
+	Wall* w5 = new Wall(st5, p5, l5, n5);
+
+	double st6[2] = {0, -80};
+	double p6[2] = {1.0, 0.0};
+	double n6[2] = {0.0, 1.0};
+	double l6 = 600;
+	Wall* w6 = new Wall(st6, p6, l6, n6);
 
 	addWall(w1);
 	addWall(w2);
 	addWall(w3);
 	addWall(w4);
+	addWall(w5);
+	addWall(w6);
 
 	Reset(-1);
 }
@@ -43,37 +61,56 @@ Bottleneck::Bottleneck(int agent_n, int obs_n)
 Bottleneck::~Bottleneck()
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
-	{
 		delete (*it);
-	}
 	_agents.clear();
 
 	for(vector< Wall* >::iterator it = _walls.begin() ; it != _walls.end(); it++)
-	{
 		delete (*it);
-	}
 	_walls.clear();
 }
 
 void Bottleneck::initEvaluation()
 {
-	int eval_set_num = 6;
-
 	srand((unsigned int)time(0));
 
-	int rand_x;
-	int rand_y;
+	int eval_set_num = 6;
+	int rand_x, rand_y;
+	double pos[2];
+	bool col =false;
 	for(int i=0; i<eval_set_num; i++)
 	{
 		for(int j=0; j<agent_num; j++)
 		{
-			rand_x = rand()%100;
-			rand_y = rand()%200;
+			while(true)
+			{
+				rand_x = rand()%60;
+				rand_y = rand()%240;
 
-			eval_agent_p_x.push_back(-300 + rand_x);
-			eval_agent_p_y.push_back(-100 + rand_y);
+				pos[0] = -300 + rand_x;
+				pos[1] = -120 + rand_y;
+
+				col = false;
+				int start_idx = 0;
+				for(int k=0; k<j; k++)
+				{
+					double p[2];
+					p[0] = eval_agent_p_x.at(k);
+					p[1] = eval_agent_p_y.at(k);
+					if(Dist(pos, p) < 1.0)
+					{
+						col = true;
+						break;
+					}
+				}
+
+				if(col == false)
+					break;
+			}
+
+			eval_agent_p_x.push_back(pos[0]);
+			eval_agent_p_y.push_back(pos[1]);
 			eval_agent_d_x.push_back(250);
-			eval_agent_d_y.push_back(-100 + rand_y);
+			eval_agent_d_y.push_back(-10 + rand()%20);
 		}
 	}
 }
@@ -89,9 +126,7 @@ void Bottleneck::Reset(int idx)
 void Bottleneck::ResetEval(int idx)
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
-	{
 		delete (*it);
-	}
 	_agents.clear();
 
 	for(int i=0; i<agent_num; i++)
@@ -131,8 +166,8 @@ void Bottleneck::ResetEnv()
 
 	srand((unsigned int)time(0));
 
-	int rand_x;
-	int rand_y;
+	int rand_x, rand_y;
+	double r_j;
 	double pos[2];
 	bool col = false;
 	Agent* agent;
@@ -140,17 +175,22 @@ void Bottleneck::ResetEnv()
 	{
 		while(true)
 		{
-			rand_x = rand()%100;
-			rand_y = rand()%200;
+			col = false;
+
+			rand_x = rand()%150;
+			rand_y = rand()%340;
 
 			pos[0] = -300 + rand_x;
-			pos[1] = -100 + rand_y;
+			pos[1] = -170 + rand_y;
 
-			col = false;
+			if(i==0 && pos[1] > -80 && pos[1] < 80)
+				col = true;
+
 			int start_idx = 0;
 			for(int j=0; j<i; j++)
 			{
-				if(Dist(pos, getAgent(j)->getP()) < 20)
+				r_j = getAgent(j)->getR();
+				if(Dist(pos, getAgent(j)->getP()) < r_j * 2)
 				{
 					col = true;
 					break;
@@ -164,7 +204,10 @@ void Bottleneck::ResetEnv()
 		agent = new Agent(); // p q d
 		agent->setP(pos[0], pos[1]);
 		agent->setPprev(pos[0], pos[1]);
-		agent->setD(300.0, -100 + rand()%200);
+		if(i==0)
+			agent->setD(300.0, -10 + rand()%20);
+		else
+			agent->setD(600.0, -10 + rand()%20);
 		agent->setQ(1.0, 0.0);
 		agent->setFront(0.0);
 		agent->setColor(0.8, 0.2, 0.2);
@@ -191,9 +234,7 @@ void Bottleneck::ResetEnv()
 void Bottleneck::Render()
 {
 	for(int i=0; i<agent_num; i++)
-	{
 		getAgent(i)->Render();
-	}
 }
 
 

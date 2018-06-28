@@ -1,13 +1,16 @@
 import sys
 sys.path.append('../base')
 
-from replaymemory import ReplayMemory
-from constants import Constants as cst
 from time import localtime, strftime
+from constants import Constants as cst
+from replaymemory import ReplayMemory
+
 from ddpg import DDPG
 from basic import Basic
 from corridor import Corridor
-
+from bottleneck import Bottleneck
+from crossway import Crossway
+from circle import Circle
 
 import csim
 
@@ -23,10 +26,11 @@ FLAG_M_REPLAY_SAVE = True
 class Experiment_Offline:
 	def __init__(self):
 
-		#self.SCENARIO = 'Basic'
+		# self.SCENARIO = 'Basic'
 		self.SCENARIO = 'Corridor'
 		# self.SCENARIO = 'Bottleneck'
 		# self.SCENARIO = 'Crossway'
+		# self.SCENARIO = 'Circle'
 
 		self.setEnvironment(self.SCENARIO)
 		self.setNetwork()
@@ -45,6 +49,8 @@ class Experiment_Offline:
 			self.Parser = csim.Parser("Bottleneck")
 		elif SCENARIO == 'Crossway':
 			self.Parser = csim.Parser("Crossway")
+		elif SCENARIO == 'Circle':
+			self.Parser = csim.Parser("Circle")
 
 		obs = self.Observe()
 
@@ -52,14 +58,16 @@ class Experiment_Offline:
 			self.Scenario = Basic(obs)
 		elif SCENARIO == 'Corridor':
 			self.Scenario = Corridor(obs)
-		# elif SCENARIO == 'Bottleneck':
-		# 	self.Scenario = Bottleneck(obs)
-		# elif SCENARIO == 'Crossway':
-		# 	self.Scenario = Crossway(obs)
+		elif SCENARIO == 'Bottleneck':
+			self.Scenario = Bottleneck(obs)
+		elif SCENARIO == 'Crossway':
+			self.Scenario = Crossway(obs)
+		elif SCENARIO == 'Circle':
+			self.Scenario = Circle(obs)
 
 	def setNetwork(self):
 		network_dim = []
-		network_dim.append(4)
+		network_dim.append(3)
 		network_dim.append(60)
 		network_dim.append(2)
 		self.Algorithm = DDPG(network_dim)
@@ -145,7 +153,7 @@ class Experiment_Offline:
 			if self.train_iter<10 or iteration%(self.train_iter/10) == 0:
 				print "\n", iteration/(float)(self.train_iter/10)*10, "% Done...\n"
 
-			if iteration % 400 == 0:
+			if iteration % 1000 == 0:
 				self.flag_eval=True
 
 		training_time = time.time() - self.st_time
@@ -163,15 +171,13 @@ class Experiment_Offline:
 
 	def episode_evaluation(self):
 		evaluation_num = cst.EVALUTAION_SET
-		if self.SCENARIO == 'Circle':
-			evaluation_num = cst.AGENT_COUNT
 
 		step_count = 0
 		avg_reward = 0
 		total_reward = 0
 		for i in range(evaluation_num):
 			self.Parser.Reset(i)
-			for j in range(150):
+			for j in range(200):
 				obs, action, memory = self.Execute(action_type='ACTOR', run_type='TRAIN')
 
 				total_reward += memory['reward']

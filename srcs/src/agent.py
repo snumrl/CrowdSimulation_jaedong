@@ -14,6 +14,21 @@ import math
 import copy
 import random
 
+def drawTriangle(p_x, p_y, p_z):
+	glBegin(GL_TRIANGLES)
+	glVertex3f( p_x,  p_y, p_z)
+	glVertex3f( p_y, -p_x, p_z)
+	glVertex3f(-p_y,  p_x, p_z)
+	glEnd()
+
+def drawQuad(p_x, p_y, p_z):
+	glBegin(GL_QUADS)
+	glVertex3f( p_x,  p_y, p_z)
+	glVertex3f( p_y, -p_x, p_z)
+	glVertex3f(-p_y,  p_x, p_z)
+	glEnd()
+
+
 class Agent(CrowdObject):
 	def __init__(self, state, color='RED'):
 		self.reset(state, color)
@@ -98,49 +113,84 @@ class Agent(CrowdObject):
 		glPopMatrix()
 
 		if trajectory_:
-			glLineWidth(3.0)
-			glColor3f(0.2, 1.0, 0.2)
+			glLineWidth(6.0)
+			glColor3f(self.color[0],self.color[1],self.color[2])
+			# glColor3f(0.2, 1.0, 0.2)
+			# if idx%8==0:
+			# 	glColor3f(1.0, 0.0,0.0)
+			# elif idx%8==1:
+			# 	glColor3f(0.0, 1.0,0.0)
+			# elif idx%8==2:
+			# 	glColor3f(1.0, 1.0,0.0)
+			# elif idx%8==3:
+			# 	glColor3f(1.0, 0.0,1.0)
+			# elif idx%8==4:
+			# 	glColor3f(0.0, 1.0,1.0)
+			# elif idx%8==5:
+			# 	glColor3f(0.5, 0.5,0.0)
+			# elif idx%8==6:
+			# 	glColor3f(0.4, 0.6,0.0)
+			# elif idx%8==7:
+			# 	glColor3f(0.3, 0.7,0.0)
+
 			glBegin(GL_LINES)
 			l = len(self.trajectory)
-			for i in range(l):
-				glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 0)
+			if l > 30:
+				for i in range(l-30, l):
+					glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 10)
+			else:
+				for i in range(l):
+					glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 10)
 			glEnd()
 
 		self.render_destination()
 
 	def render_agent(self, idx):
-		#render agent
-		# print "idx : ", idx, " pos : ", self.p[0], ", ", self.p[1]
-		glColor3f(self.color[0],self.color[1],self.color[2])
-		glTranslatef(self.p[0], self.p[1], 0)
+		# render agent
 
+		glColor3f(self.color[0],self.color[1],self.color[2])
+		glTranslatef(self.p[0], self.p[1], 1)
 		quad = gluNewQuadric()
 		gluSphere(quad, self.r, 50, 50)
+		# gluCylinder(quad, self.r, self.r, 40, 50, 50)
 
 		#render Triangle of Agent
 		glColor3f(0.3, 0.3, 1.0)
-		glBegin(GL_TRIANGLES)
-		len = np.linalg.norm(self.q)
-		cur_x = self.q[0]*self.r/len*0.9
-		cur_y = self.q[1]*self.r/len*0.9
-		glVertex3f( cur_x,  cur_y, 0)
-		glVertex3f( cur_y, -cur_x, 0)
-		glVertex3f(-cur_y,  cur_x, 0)
-		glEnd()
+		glPushMatrix()
+		# glTranslatef(8.0*self.q[0], 8.0*self.q[1], 0.0)
+
+		len_ = np.linalg.norm(self.q)
+		cur_x = self.q[0]*self.r/len_*0.8
+		cur_y = self.q[1]*self.r/len_*0.8
+
+		drawTriangle(cur_x, cur_y, 1.0)
+
+		# glColor3f(1, 0, 0)
+		# glBegin(GL_LINES)
+		# glVertex3f(0, 0, 0)
+		# glVertex3f(self.q[0]*300, self.q[1]*300, 0)
+		# glEnd()
+
+		# glColor3f(0, 1, 0)
+		# glBegin(GL_LINES)
+		# glVertex3f(0, 0, 0)
+		# glVertex3f(self.q[1]*-300, self.q[0]*300, 0)
+		# glEnd()
+
+		glPopMatrix()
 
 	def render_destination(self):
 		glColor3f(1.0, 1.0, 0.0)
 		glPushMatrix()
-		glTranslatef(self.d[0], self.d[1], 0)
+		glTranslatef(self.d[0], self.d[1], 3)
 		quad = gluNewQuadric()
-		gluSphere(quad, 3.0, 50, 50)
+		gluSphere(quad, 0.3, 50, 50)
 		glPopMatrix()
-
 
 	def render_depth_map(self):
 		glLineWidth(2)
 		for i in range(self.q_lim):
-			angle = math.radians(self.front + self.agent_fov/2 - self.interval*i)
+			angle = self.front + math.radians(self.agent_fov/2 - self.interval*i)
 			glBegin(GL_LINES)
 			glVertex3f(self.r*math.cos(angle), self.r*math.sin(angle), 0)
 			glVertex3f((self.d_map[i]+self.r)*math.cos(angle), (self.d_map[i]+self.r)* math.sin(angle), 0)
@@ -195,7 +245,7 @@ class Wall():
 
 	def render(self):
 		glPushMatrix()
-		glColor3f(0.4, 0.4, 0.4)
+		glColor3f(0.7, 0.7, 0.7)
 		glBegin(GL_LINES)
 		glVertex3f(self.st[0], self.st[1], 0)
 		glVertex3f(self.ed[0], self.ed[1], 0)

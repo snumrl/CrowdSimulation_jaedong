@@ -4,12 +4,17 @@
 #include "parser.h"
 #include "scenario/Basic.h"
 #include "scenario/Corridor.h"
+#include "scenario/Crossway.h"
+#include "scenario/Circle.h"
+#include "scenario/Bottleneck.h"
 
 using namespace boost::python;
 using namespace std;
 
 #define AGENT_NUM 1
-#define OBSTACLE_NUM 0
+#define OBSTACLE_NUM 10
+
+static double time_step = 1.0;
 
 Parser::Parser(string Scenario)
 {
@@ -20,6 +25,15 @@ Parser::Parser(string Scenario)
 	}
 	else if(Scenario.compare("Corridor") == 0){
 		_env = new Corridor(AGENT_NUM, OBSTACLE_NUM);
+	}
+	else if(Scenario.compare("Crossway") == 0){
+		_env = new Crossway(AGENT_NUM, OBSTACLE_NUM);
+	}
+	else if(Scenario.compare("Circle") == 0){
+		_env = new Circle(AGENT_NUM, OBSTACLE_NUM);
+	}
+	else if(Scenario.compare("Bottleneck") == 0){
+		_env = new Bottleneck(AGENT_NUM, OBSTACLE_NUM);
 	}
 }
 

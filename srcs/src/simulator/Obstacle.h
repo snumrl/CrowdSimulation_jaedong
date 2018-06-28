@@ -4,7 +4,7 @@
 class Obstacle{
 	protected:
 		double _p[2];
-		double _r = 10.0;
+		double _r = 0.5;
 
 		int _id;
 

@@ -14,9 +14,12 @@ class ReplayMemory:
 
 	def addMemory(self, buffername, s, a, ns, r, t):
 		newMemory = {}
-		newMemory['state']=s
-		newMemory['action']=a
-		newMemory['next_state']=ns
+		# newMemory['state']=s
+		# newMemory['action']=a
+		# newMemory['next_state']=ns
+		newMemory['state']=s['agent'][0]
+		newMemory['action']=a[0]
+		newMemory['next_state']=ns['agent'][0]
 		newMemory['reward']=r
 		newMemory['term'] = t
 		self.memory[buffername].append(newMemory)

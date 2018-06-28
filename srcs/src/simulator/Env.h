@@ -19,7 +19,7 @@ class Env{
 
 		int _cur_step = 0;
 		int _max_step = 400;
-		int _vision_depth = 300;
+		int _vision_depth = 30;
 
 		double _reward;
 
@@ -39,7 +39,7 @@ class Env{
 
 		void depth_by_obstacles(double* angle, Agent* agent, double* _map);
 		void depth_by_agents(double* angle, Agent* agent,  double* _map, int idx);
-		void depth_by_walls(double* angle, Agent* agent,  double* _map);
+		void depth_by_walls(double* angle, Agent* agent,  double* _map, int idx);
 
 		// Object
 		void addAgent(Agent* agent);

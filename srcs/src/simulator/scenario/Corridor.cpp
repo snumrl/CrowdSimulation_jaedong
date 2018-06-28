@@ -12,15 +12,29 @@ Corridor::Corridor(int agent_n, int obs_n)
 
 	initEvaluation();
 
-	double st1[2] = {-600, 250};
-	double p1[2] = {1.0, 0.0};
-	double l1 = 1200;
-	Wall* w1 = new Wall(st1, p1, l1);
+	// double st1[2] = {-600, 65};
+	// double p1[2] = {1.0, 0.0};
+	// double n1[2] = {0.0, -1.0};
+	// double l1 = 1200;
+	// Wall* w1 = new Wall(st1, p1, l1, n1);
 
-	double st2[2] = {-600, -250};
+	// double st2[2] = {-600, -65};
+	// double p2[2] = {1.0, 0.0};
+	// double n2[2] = {0.0, 1.0};
+	// double l2 = 1200;
+	// Wall* w2 = new Wall(st2, p2, l2, n2);
+
+	double st1[2] = {-30, 10};
+	double p1[2] = {1.0, 0.0};
+	double n1[2] = {0.0, -1.0};
+	double l1 = 60;
+	Wall* w1 = new Wall(st1, p1, l1, n1);
+
+	double st2[2] = {-30, -10};
 	double p2[2] = {1.0, 0.0};
-	double l2 = 1200;
-	Wall* w2 = new Wall(st2, p2, l2);
+	double n2[2] = {0.0, 1.0};
+	double l2 = 60;
+	Wall* w2 = new Wall(st2, p2, l2, n2);
 
 	addWall(w1);
 	addWall(w2);
@@ -31,57 +45,85 @@ Corridor::Corridor(int agent_n, int obs_n)
 Corridor::~Corridor()
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
-	{
 		delete (*it);
-	}
 	_agents.clear();
 
 	for(vector< Obstacle* >::iterator it = _obstacles.begin() ; it != _obstacles.end(); it++)
-	{
 		delete (*it);
-	}
 	_obstacles.clear();
 }
 
 void Corridor::initEvaluation()
 {
-	int eval_set_num = 6;
-
 	srand((unsigned int)time(0));
 
-	int rand_x;
-	int rand_y;
+	int eval_set_num = 6;
+	int rand_x, rand_y;
+	double pos[2];
+	bool col = false;
 	for(int i=0; i<eval_set_num; i++)
 	{
-		for(int j=0; j<agent_num/2; j++)
+		for(int j=0; j<agent_num; j++)
 		{
-			rand_x = rand()%100;
-			rand_y = rand()%200;
+			while(true)
+			{
+				rand_x = rand()%3;
+				rand_y = rand()%18;
 
-			eval_agent_p_x.push_back(-300 + rand_x);
-			eval_agent_p_y.push_back(-100 + rand_y);
-			eval_agent_d_x.push_back(250);
-			eval_agent_d_y.push_back(-100 + rand_y);
-		}
+				if(i < agent_num/2)
+				{
+					pos[0] = -24 + rand_x;
+					pos[1] = -9 + rand_y;
+				}
+				else
+				{
+					pos[0] = 22 + rand_x;
+					pos[1] = -9 + rand_y;
+				}
 
-		for(int j=agent_num/2; j<agent_num; j++)
-		{
-			rand_x = rand()%100;
-			rand_y = rand()%200;
+				col = false;
+				int start_idx = 0;
+				if(j > agent_num/2)
+					start_idx = agent_num/2;
 
-			eval_agent_p_x.push_back(200 + rand_x);
-			eval_agent_p_y.push_back(-100 + rand_y);
-			eval_agent_d_x.push_back(-250);
-			eval_agent_d_y.push_back(-100 + rand_y);
+				for(int k=start_idx; k<j; k++)
+				{
+					double p[2];
+					p[0] = eval_agent_p_x.at(k);
+					p[1] = eval_agent_p_y.at(k);
+					if(Dist(pos, p) < 1.0)
+					{
+						col = true;
+						break;
+					}
+				}
+
+				if(col == false)
+					break;
+			}
+
+			eval_agent_p_x.push_back(pos[0]);
+			eval_agent_p_y.push_back(pos[1]);
+
+			if(j < agent_num/2)
+			{
+				eval_agent_d_x.push_back(24);
+				eval_agent_d_y.push_back(pos[1]);
+			}
+			else
+			{
+				eval_agent_d_x.push_back(-24);
+				eval_agent_d_y.push_back(pos[1]);
+			}
 		}
 
 		for(int j=0; j<obstacle_num; j++)
 		{
-			rand_x = rand()%300;
-			rand_y = rand()%300;
+			rand_x = rand()%40;
+			rand_y = rand()%20;
 
-			eval_obs_p_x.push_back(-150 + rand_x);
-			eval_obs_p_y.push_back(-150 + rand_y);
+			eval_obs_p_x.push_back(-20 + rand_x);
+			eval_obs_p_y.push_back(-10 + rand_y);
 		}
 	}
 }
@@ -97,22 +139,12 @@ void Corridor::Reset(int idx)
 void Corridor::ResetEval(int idx)
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
-	{
 		delete (*it);
-	}
 	_agents.clear();
 
 	for(vector< Obstacle* >::iterator it = _obstacles.begin() ; it != _obstacles.end(); it++)
-	{
 		delete (*it);
-	}
 	_obstacles.clear();
-
-	for(vector< Wall* >::iterator it = _walls.begin() ; it != _walls.end(); it++)
-	{
-		delete (*it);
-	}
-	_walls.clear();
 
 	for(int i=0; i<agent_num; i++)
 	{
@@ -130,7 +162,8 @@ void Corridor::ResetEval(int idx)
 		else
 		{
 			agent->setQ(-1.0, 0.0);
-			agent->setFront(180.0);
+			// agent->setFront(180.0);
+			agent->setFront(3.14);
 		}
 
 		double* dmap = new double[20];
@@ -174,40 +207,39 @@ void Corridor::ResetEnv()
 
 	srand((unsigned int)time(0));
 
-	int rand_x;
-	int rand_y;
+	int rand_x, rand_y;
+	double r_j;
+	int rand_idx  = rand() % 5;
 	double pos[2];
 	bool col = false;
 	Agent* agent;
 	for(int i=0; i<agent_num; i++)
 	{
-
 		while(true)
 		{
-			rand_x = rand()%100;
-			rand_y = rand()%200;
+			rand_x = rand()%3;
+			rand_y = rand()%18;
 
-			// if(i < agent_num/2)
-			if(i < agent_num)
+			if(i < agent_num/2)
 			{
-				pos[0] = -300 + rand_x;
-				pos[1] = -100 + rand_y;
+				pos[0] = -24 + rand_x;
+				pos[1] = -9 + rand_y;
 			}
 			else
 			{
-				pos[0] = 200 + rand_x;
-				pos[1] = -100 + rand_y;
+				pos[0] = 22 + rand_x;
+				pos[1] = -9 + rand_y;
 			}
 
 			col = false;
 			int start_idx = 0;
-			// if(i > agent_num/2)
-			if(i > agent_num)
+			if(i > agent_num/2)
 				start_idx = agent_num/2;
 
 			for(int j=start_idx; j<i; j++)
 			{
-				if(Dist(pos, getAgent(j)->getP()) < 20)
+				r_j = getAgent(j)->getR();
+				if(Dist(pos, getAgent(j)->getP()) < r_j * 2)
 				{
 					col = true;
 					break;
@@ -221,21 +253,51 @@ void Corridor::ResetEnv()
 		agent = new Agent(); // p q d
 		agent->setP(pos[0], pos[1]);
 		agent->setPprev(pos[0], pos[1]);
-		// if(i < agent_num/2)
-		if(i < agent_num)
+		if(i < agent_num/2)
 		{
-			agent->setD(400.0, -100 + rand()%200);
+			agent->setD(24.0, -10 + rand()%20);
+			// agent->setD(400.0, pos[1]);
 			agent->setQ(1.0, 0.0);
 			agent->setFront(0.0);
 			agent->setColor(0.8, 0.2, 0.2);
 		}
 		else
 		{
-			agent->setD(-300.0, -100 + rand()%200);
+			agent->setD(-24.0, -10 + rand()%20);
+			// agent->setD(-400.0, pos[1]);
 			agent->setQ(-1.0, 0.0);
-			agent->setFront(180.0);
+			// agent->setFront(180.0);
+			agent->setFront(3.14);
 			agent->setColor(0.2, 0.8, 0.2);
 		}
+
+		// if(i < agent_num/2)
+		// {
+		// 	pos[0] = -100;
+		// 	pos[1] = 50 - 25*((i+rand_idx)%5);
+		// 	agent = new Agent(); // p q d
+		// 	agent->setP(pos[0], pos[1]);
+		// 	agent->setPprev(pos[0], pos[1]);
+		// 	agent->setD(400.0 , pos[1]);
+		// 	agent->setQ(1.0, 0.0);
+		// 	agent->setFront(0.0);
+		// 	agent->setColor(0.8, 0.2, 0.2);
+		// 	if(i==0)
+		// 		agent->setD(250.0 , pos[1]);
+
+		// }
+		// else
+		// {
+		// 	pos[0] = 100;
+		// 	pos[1] = 50 - 25*(i-5);
+		// 	agent = new Agent(); // p q d
+		// 	agent->setP(pos[0], pos[1]);
+		// 	agent->setPprev(pos[0], pos[1]);
+		// 	agent->setD(-400.0, pos[1]);
+		// 	agent->setQ(-1.0, 0.0);
+		// 	agent->setFront(180.0);
+		// 	agent->setColor(0.2, 0.8, 0.2);
+		// }
 
 		double* dmap = new double[20];
 		for(int j=0; j<20; j++){
@@ -255,12 +317,11 @@ void Corridor::ResetEnv()
 
 	for(int i=0; i<obstacle_num; i++)
 	{
-		int rand_x;
-		int rand_y;
-		rand_x = rand()%300;
-		rand_y = rand()%300;
+		int rand_x, rand_y;
+		rand_x = rand()%40;
+		rand_y = rand()%20;
 		Obstacle* obs = new Obstacle(); // p q d
-		obs->setP(-150.0 + rand_x, -150.0 + rand_y);
+		obs->setP(-20.0 + rand_x, -10.0 + rand_y);
 
 		addObstacle(obs);
 	}
@@ -271,14 +332,10 @@ void Corridor::ResetEnv()
 void Corridor::Render()
 {
 	for(int i=0; i<agent_num; i++)
-	{
 		getAgent(i)->Render();
-	}
 
 	for(int i=0; i<obstacle_num; i++)
-	{
 		getObstacle(i)->Render();
-	}
 }
 
 

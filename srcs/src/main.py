@@ -11,22 +11,27 @@ from constants import Constants as cst
 from ddpg import DDPG
 from basic import Basic
 from corridor import Corridor
+from circle import Circle
+from crossway import Crossway
+from bottleneck import Bottleneck
 
-FLAG_USE_RECENT_CKPT = False
-FLAG_USE_REPLAY_MEMORY = False
+FLAG_USE_RECENT_CKPT = True
+FLAG_USE_REPLAY_MEMORY = True
 FLAG_WARMUP_FOR_TRAINING = False
 
 class Experiment:
-	def __init__(self, WIDTH=1260, HEIGHT=680):
+	def __init__(self, WIDTH=1200, HEIGHT=800):
 		self.WIDTH = WIDTH
 		self.HEIGHT = HEIGHT
 		self.initGL()
 		self.initFlag()
 
-		#SCENARIO = 'Basic'
+		# SCENARIO = 'Basic'
 		SCENARIO = 'Corridor'
 		# SCENARIO = 'Bottleneck'
 		# SCENARIO = 'Crossway'
+		# SCENARIO = 'Circle'
+		# SCENARIO = 'Valley'
 
 		self.setEnvironment(SCENARIO)
 		self.setNetwork()
@@ -41,6 +46,8 @@ class Experiment:
 			self.WarmUp()
 
 		self.isTerm = False
+		self.train_iter = 0
+		self.episode_iter = 0
 
 		self.timer_func()
 		glutMainLoop()
@@ -78,6 +85,8 @@ class Experiment:
 			self.Parser = csim.Parser("Bottleneck")
 		elif SCENARIO == 'Crossway':
 			self.Parser = csim.Parser("Crossway")
+		elif SCENARIO == 'Circle':
+			self.Parser = csim.Parser("Circle")
 
 		obs = self.Observe()
 
@@ -85,16 +94,19 @@ class Experiment:
 			self.Scenario = Basic(obs)
 		elif SCENARIO == 'Corridor':
 			self.Scenario = Corridor(obs)
-		# elif SCENARIO == 'Bottleneck':
-		# 	self.Scenario = Bottleneck(obs)
-		# elif SCENARIO == 'Crossway':
-		# 	self.Scenario = Crossway(obs)
+		elif SCENARIO == 'Crossway':
+			self.Scenario = Crossway(obs)
+		elif SCENARIO == 'Circle':
+			self.Scenario = Circle(obs)
+		elif SCENARIO == 'Bottleneck':
+			self.Scenario = Bottleneck(obs)
+
 
 	def setNetwork(self):
 		network_dim = []
-		network_dim.append(4)
-		network_dim.append(60)
-		network_dim.append(2)
+		network_dim.append(cst.AGENT_BODY_DIMENSION)
+		network_dim.append(cst.AGENT_SENSOR_DIMENSION*3)
+		network_dim.append(cst.AGENT_ACTION_DIMENSION)
 		self.Algorithm = DDPG(network_dim)
 
 	def Reset(self):
@@ -103,10 +115,13 @@ class Experiment:
 		self.flag['record'] = False
 		self.flag['replay'] = False
 		self.flag['greedy'] = False
-
+		self.train_iter = 0
+		self.episode_iter = 0
 		self.Parser.Reset(-1)
 		obs = self.Observe()
 		self.Scenario.setObjectData(obs)
+		for i in range(len(self.Scenario.agents)):
+			self.Scenario.agents[i].trajectory = []
 
 	def Observe(self):
 		obs = self.Parser.Observe()
@@ -178,19 +193,21 @@ class Experiment:
 
 		return action
 
-	def timer_func(self, fps=120):
-
+	def timer_func(self, fps=180):
 		if self.flag['replay']:
 			fps = 40
 			self.frame += 1
 		else:
-			fps = 120
+			fps = 180
 			self.frame = 0
 			if self.flag['train']:
 				if self.isTerm:
 					print "New Episode"
 					self.Algorithm.expl_rate_decay()
 					self.isTerm = False
+					self.episode_iter += 1
+					if self.episode_iter % 10 == 0:
+						print "episode : ", self.episode_iter
 
 				obs, action, memory = self.Execute(action_type='ACTOR', run_type='TRAIN')
 				memory['obs'] = self.convert_to_numpy(memory['obs'])
@@ -202,6 +219,9 @@ class Experiment:
 					self.Parser.Reset(-1)
 
 				self.Update('ACTOR', obs, action, memory)
+				self.train_iter += 1
+				if self.train_iter % 2000 == 0:
+					print "train iter : ", self.train_iter
 
 			elif self.flag['play']:
 				if self.flag['greedy']:
@@ -292,20 +312,45 @@ class Experiment:
 				self.flag['greedy'] = True
 
 	def reshape(self, w, h):
+		glEnable(GL_DEPTH_TEST)
+		glDepthFunc(GL_LESS)
 		glViewport(0, 0, w, h)
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		glOrtho(-self.WIDTH/2, self.WIDTH/2, -self.HEIGHT/2, self.HEIGHT/2, -30, 30)
+		glOrtho(-30, 30, -20, 20, -5, 5)
+		# gluPerspective(5.0, 1260.0/680.0, 0.1, 1000)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
+	def render_base(self):
+		for i in range(10):
+			for j in range(10):
+				glPushMatrix()
+				glTranslatef(-1000 + i * 200 + 100, -1000 + j * 200 + 100, 0)
+				if (i+j) % 2 ==0:
+					glColor3f(0.5, 0.5, 0.5)
+				else:
+					glColor3f(0.7, 0.7, 0.7)
+				glBegin(GL_QUADS)
+				glVertex3f( -100.0,  -100.0, 0)
+				glVertex3f( -100.0,   100.0, 0)
+				glVertex3f(  100.0,   100.0, 0)
+				glVertex3f(  100.0,  -100.0, 0)
+				glEnd()
+				glPopMatrix()
+
 	def display(self):
-		glClearColor(0.9, 0.9, 0.9, 0.0)
+		glClearColor(0.8, 0.8, 0.8, 0.0)
+		glClearDepth(1.0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
-		gluLookAt(0, 0, 30, 0, 0, 0, 0, 1, 0)
+		gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0)
+
+		# glPushMatrix()
+		# self.render_base()
+		# glPopMatrix()
 
 		glPushMatrix()
 		if self.flag['replay'] and self.Scenario.record_size != 0:

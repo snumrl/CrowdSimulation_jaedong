@@ -38,8 +38,8 @@ class DDPG:
 		self.batch_size = cst.BATCH_SIZE
 		self.gamma = cst.REWARD_DECAY
 
-		self.actorNN = ActorNetwork(self.sess,self.dim_state, self.dim_action, self.act_lr, self.tau, self.batch_size)
-		self.criticNN = CriticNetwork(self.sess,self.dim_state, self.dim_action, self.cri_lr, self.tau, self.gamma, self.actorNN.get_num_trainable_vars())
+		self.actorNN = ActorNetwork(self.sess,self.dim_body, self.dim_sensor, self.dim_action, self.act_lr, self.tau, self.batch_size)
+		self.criticNN = CriticNetwork(self.sess,self.dim_body, self.dim_sensor, self.dim_action, self.cri_lr, self.tau, self.gamma, self.actorNN.get_num_trainable_vars())
 
 		self.sess.run(tf.global_variables_initializer())
 
@@ -70,7 +70,7 @@ class DDPG:
 		agent_num = len(obs['agent'])
 		for i in range(0, agent_num):
 			agent_obs = obs['agent'][i]
-			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < cst.AGENT_RADIUS + 10:
+			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < cst.AGENT_RADIUS + 0.5:
 				action = {}
 				action['theta'] = 0
 				action['velocity'] = 0
@@ -156,7 +156,7 @@ class DDPG:
 		return action_list
 
 	def get_action_greedy(self, agent_obs):
-		if np.linalg.norm(agent_obs['d']-agent_obs['p']) < 10 + 10:
+		if np.linalg.norm(agent_obs['d']-agent_obs['p']) < 0.5 + 0.5:
 			action = {}
 			action['theta'] = 0
 			action['velocity'] = 0
@@ -177,7 +177,7 @@ class DDPG:
 			greedy_dir = 1
 
 		for angle in range(angle_num):
-			if agent_obs['d_map'][angle] < 10+offset:
+			if agent_obs['d_map'][angle] < 0.5+offset:
 				continue
 
 			curr_angle = 190/2 - angle*10
@@ -231,11 +231,11 @@ class DDPG:
 
 		s_body_batch, s_sensor_batch, a_batch, r_batch, t_batch, s2_body_batch, s2_sensor_batch = [], [], [], [], [], [], []
 		for m in rm_critic_batch:
-			state_ = copy.copy(self.preprocess(m['state']['agent'][0]))
+			state_ = copy.copy(self.preprocess(m['state']))
 			state_body = copy.copy(state_['body'])
 			state_sensor = copy.copy(state_['sensor'])
-			action = copy.copy(np.array([m['action'][0]['theta'], m['action'][0]['velocity']]))
-			next_state_ = copy.copy(self.preprocess(m['next_state']['agent'][0]))
+			action = copy.copy(np.array([m['action']['theta'], m['action']['velocity']]))
+			next_state_ = copy.copy(self.preprocess(m['next_state']))
 			next_state_body = copy.copy(next_state_['body'])
 			next_state_sensor = copy.copy(next_state_['sensor'])
 
@@ -266,10 +266,10 @@ class DDPG:
 
 		actor_body_batch, actor_sensor_batch, actor_a_batch = [], [], []
 		for m in rm_actor_batch:
-			state_ = copy.copy(self.preprocess(m['state']['agent'][0]))
+			state_ = copy.copy(self.preprocess(m['state']))
 			state_body = copy.copy(state_['body'])
 			state_sensor = copy.copy(state_['sensor'])
-			action = copy.copy(np.array([m['action'][0]['theta'], m['action'][0]['velocity']]))
+			action = copy.copy(np.array([m['action']['theta'], m['action']['velocity']]))
 			actor_body_batch.append(state_body[0])
 			actor_sensor_batch.append(state_sensor[0])
 			actor_a_batch.append(action)
@@ -386,11 +386,22 @@ class DDPG:
 	def load_memory(self):
 		f = open(cst.RM_PATH+"checkpoint", 'r')
 		recent_file_name = f.readline()
+		# recent_file_name = recent_file_name[:-1]
 		f.close()
 
 		f_rm = open(cst.RM_PATH+"rm_"+recent_file_name, 'r')
 		self.rm = pickle.load(f_rm)
 		f_rm.close()
+
+		# for i in range(len(self.rm.memory['actor'])):
+		# 	self.rm.memory['actor'][i]['state'] = self.rm.memory['actor'][i]['state']['agent'][0]
+		# 	self.rm.memory['actor'][i]['action'] = self.rm.memory['actor'][i]['action'][0]
+		# 	self.rm.memory['actor'][i]['next_state'] = self.rm.memory['actor'][i]['next_state']['agent'][0]
+
+		# for i in range(len(self.rm.memory['critic'])):
+		# 	self.rm.memory['critic'][i]['state'] = self.rm.memory['critic'][i]['state']['agent'][0]
+		# 	self.rm.memory['critic'][i]['action'] = self.rm.memory['critic'][i]['action'][0]
+		# 	self.rm.memory['critic'][i]['next_state'] = self.rm.memory['critic'][i]['next_state']['agent'][0]
 
 		print "Load Replay Memory :  ", cst.RM_PATH,"rm_",recent_file_name
 
@@ -419,30 +430,46 @@ class DDPG:
 		q_ = np.array(q)
 		d_ = np.array(d)
 
-		width = cst.WINDOW_WIDTH/2.0
-		height = cst.WINDOW_HEIGHT/2.0
+		width = 60
+		height = 40
 
-		p_[0] = p_[0] / width
-		p_[1] = p_[1] / height
+		_len = np.sqrt(width*width +  height*height)
 
-		d_[0] = d_[0] / width
-		d_[1] = d_[1] / height
+		p_[0] = p_[0] / _len
+		p_[1] = p_[1] / _len
+
+		d_[0] = d_[0] / _len
+		d_[1] = d_[1] / _len
 
 		q_norm = np.linalg.norm(q_)
 		q_ = (q_ / q_norm)
 
 		pd = np.array(d_-p_)
 		pd_len = np.linalg.norm(pd)
-		pd_vec = pd / pd_len
+		pd_ = pd / pd_len
 
-		inner = mMath.InnerProduct(q_, pd_vec)
-		cross = mMath.CrossProduct(q_, pd_vec)
+		relative_dir = []
+		relative_dir.append(mMath.InnerProduct(q_, pd_))
+		relative_dir.append(mMath.CrossProduct(q_, pd_))
 
-		cross_val = 1.0
-		if cross < 0:
-			cross_val = 0.0
+		# print "relative_dir : ", relative_dir[0], ", ", relative_dir[1]
+		# print "pd_len : ", pd_len
 
-		return [v, inner, cross_val, pd_len]
+		# return [v, relative_dir[0], relative_dir[1], pd_len]
+		return [v, relative_dir[0]*pd_len, relative_dir[1]*pd_len]
+
+		# pd = np.array(d_-p_)
+		# pd_len = np.linalg.norm(pd)
+		# pd_vec = pd / pd_len
+
+		# inner = mMath.InnerProduct(q_, pd_vec)
+		# cross = mMath.CrossProduct(q_, pd_vec)
+
+		# cross_val = 1.0
+		# if cross < 0:
+			# cross_val = 0.0
+
+		# return [v, inner, cross_val, pd_len]
 
 	def preprocess_sensor(self, d_map, v_map, q_lim, vision_depth):
 		d_map_ = np.divide(d_map, vision_depth, dtype=float)

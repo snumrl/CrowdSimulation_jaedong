@@ -14,10 +14,13 @@ Wall::Wall()
 {
 }
 
-Wall::Wall(double* u, double* p, double l)
+Wall::Wall(double* u, double* p, double l, double* normal)
 {
 	_st[0] = u[0];
 	_st[1] = u[1];
+
+	_n[0] = normal[0];
+	_n[1] = normal[1];
 
 	double p_len = sqrt(pow(p[0], 2) + pow(p[1], 2));
 	_p[0] = p[0]/p_len;

@@ -11,64 +11,57 @@ Basic::Basic(int agent_n, int obs_n)
 	obstacle_num = obs_n;
 
 	initEvaluation();
-
 	Reset(-1);
 }
 
 Basic::~Basic()
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
-	{
 		delete (*it);
-	}
 	_agents.clear();
 
 	for(vector< Obstacle* >::iterator it = _obstacles.begin() ; it != _obstacles.end(); it++)
-	{
 		delete (*it);
-	}
 	_obstacles.clear();
 }
 
 void Basic::initEvaluation()
 {
-	int eval_set_num = 6;
-
 	srand((unsigned int)time(0));
 
-	int rand_x;
-	int rand_y;
+	int eval_set_num = 6;
+	int rand_x, rand_y;
 	for(int i=0; i<eval_set_num; i++)
 	{
 		for(int j=0; j<agent_num/2; j++)
 		{
-			rand_x = rand()%100;
-			rand_y = rand()%200;
+			rand_x = rand()%10;
+			rand_y = rand()%20;
 
-			eval_agent_p_x.push_back(-300 + rand_x);
-			eval_agent_p_y.push_back(-100 + rand_y);
-			eval_agent_d_x.push_back(250);
-			eval_agent_d_y.push_back(-100 + rand_y);
+			eval_agent_p_x.push_back(-30 + rand_x);
+			eval_agent_p_y.push_back(-10 + rand_y);
+			eval_agent_d_x.push_back(25);
+			eval_agent_d_y.push_back(-10 + rand_y);
 		}
 
 		for(int j=agent_num/2; j<agent_num; j++)
 		{
-			rand_x = rand()%100;
-			rand_y = rand()%200;
+			rand_x = rand()%10;
+			rand_y = rand()%20;
 
-			eval_agent_p_x.push_back(200 + rand_x);
-			eval_agent_p_y.push_back(-100 + rand_y);
-			eval_agent_d_x.push_back(-250);
-			eval_agent_d_y.push_back(-100 + rand_y);
+			eval_agent_p_x.push_back(20 + rand_x);
+			eval_agent_p_y.push_back(-10 + rand_y);
+			eval_agent_d_x.push_back(-25);
+			eval_agent_d_y.push_back(-10 + rand_y);
 		}
 
 		for(int j=0; j<obstacle_num; j++)
 		{
-			rand_x = rand()%300;
-			rand_y = rand()%300;
+			rand_x = rand()%30;
+			rand_y = rand()%30;
 
-			eval_obs_p_x.push_back(-150 + rand_x);
-			eval_obs_p_y.push_back(-150 + rand_y);
+			eval_obs_p_x.push_back(-15 + rand_x);
+			eval_obs_p_y.push_back(-15 + rand_y);
 		}
 	}
 }
@@ -84,15 +77,11 @@ void Basic::Reset(int idx)
 void Basic::ResetEval(int idx)
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
-	{
 		delete (*it);
-	}
 	_agents.clear();
 
 	for(vector< Obstacle* >::iterator it = _obstacles.begin() ; it != _obstacles.end(); it++)
-	{
 		delete (*it);
-	}
 	_obstacles.clear();
 
 	for(int i=0; i<agent_num; i++)
@@ -110,7 +99,8 @@ void Basic::ResetEval(int idx)
 		else
 		{
 			agent->setQ(-1.0, 0.0);
-			agent->setFront(180.0);
+			agent->setFront(3.14);
+			// agent->setFront(180);
 		}
 
 		double* dmap = new double[20];
@@ -144,38 +134,35 @@ void Basic::ResetEnv()
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
 		delete (*it);
-
 	_agents.clear();
 
 	for(vector< Obstacle* >::iterator it = _obstacles.begin() ; it != _obstacles.end(); it++)
 		delete (*it);
-
 	_obstacles.clear();
 
 	srand((unsigned int)time(0));
 
-	int rand_x;
-	int rand_y;
+	int rand_x, rand_y;
+	double r_j;
 	double pos[2];
 	bool col = false;
 	Agent* agent;
 	for(int i=0; i<agent_num; i++)
 	{
-
 		while(true)
 		{
-			rand_x = rand()%100;
-			rand_y = rand()%200;
+			rand_x = rand()%6;
+			rand_y = rand()%36;
 
 			if(i < agent_num/2)
 			{
-				pos[0] = -300 + rand_x;
-				pos[1] = -100 + rand_y;
+				pos[0] = -28 + rand_x;
+				pos[1] = -108 + rand_y;
 			}
 			else
 			{
-				pos[0] = 200 + rand_x;
-				pos[1] = -100 + rand_y;
+				pos[0] = 23 + rand_x;
+				pos[1] = -18 + rand_y;
 			}
 
 			col = false;
@@ -185,7 +172,8 @@ void Basic::ResetEnv()
 
 			for(int j=start_idx; j<i; j++)
 			{
-				if(Dist(pos, getAgent(j)->getP()) < 20)
+				r_j = getAgent(j)->getR();
+				if(Dist(pos, getAgent(j)->getP()) < r_j * 2)
 				{
 					col = true;
 					break;
@@ -196,21 +184,22 @@ void Basic::ResetEnv()
 				break;
 		}
 
-		agent = new Agent(); // p q d
+		agent = new Agent();
 		agent->setP(pos[0], pos[1]);
 		agent->setPprev(pos[0], pos[1]);
 		if(i < agent_num/2)
 		{
-			agent->setD(300.0, -100 + rand()%200);
+			agent->setD(28.0, -20 + rand()%40);
 			agent->setQ(1.0, 0.0);
 			agent->setFront(0.0);
 			agent->setColor(0.8, 0.2, 0.2);
 		}
 		else
 		{
-			agent->setD(-300.0, -100 + rand()%200);
+			agent->setD(-29.0 + rand()%4, -18 + rand()%36);
 			agent->setQ(-1.0, 0.0);
-			agent->setFront(180.0);
+			// agent->setFront(180);
+			agent->setFront(3.14);
 			agent->setColor(0.2, 0.8, 0.2);
 		}
 
@@ -234,10 +223,10 @@ void Basic::ResetEnv()
 	{
 		int rand_x;
 		int rand_y;
-		rand_x = rand()%300;
-		rand_y = rand()%300;
+		rand_x = rand()%30;
+		rand_y = rand()%30;
 		Obstacle* obs = new Obstacle(); // p q d
-		obs->setP(-150.0 + rand_x, -150.0 + rand_y);
+		obs->setP(-15.0 + rand_x, -15.0 + rand_y);
 
 		addObstacle(obs);
 	}
@@ -248,14 +237,10 @@ void Basic::ResetEnv()
 void Basic::Render()
 {
 	for(int i=0; i<agent_num; i++)
-	{
 		getAgent(i)->Render();
-	}
 
 	for(int i=0; i<obstacle_num; i++)
-	{
 		getObstacle(i)->Render();
-	}
 }
 
 

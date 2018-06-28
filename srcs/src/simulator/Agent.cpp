@@ -45,20 +45,31 @@ void Agent::setAction(double delta_t, double delta_v, bool isStop)
 		return ;
 	}
 
-	_front += delta_t*10;
-	if(_front > 180)
-		_front -= 360;
+	double time_step = 0.1;
 
-	if(_front < -180)
-		_front += 360;
+	// _front += delta_t * 60 * time_step;
+	// if(_front > 180)
+	// 	_front -= 360;
 
-	AngleToCoor(_front, _q);
+	// if(_front < -180)
+	// 	_front += 360;
 
-	_v += delta_v;
-	if(_v > 3.0)
-		_v = 3.0;
-	if(_v < -0.3)
-		_v = -0.3;
+	// AngleToCoor(_front, _q);
+
+	_front += delta_t * time_step;
+	if(_front > 3.141592)
+		_front -= 6.283184;
+
+	if(_front < -3.141592)
+		_front += 6.283184;
+
+	RadianToCoor(_front, _q);
+
+	_v += delta_v * time_step;
+	if(_v > 2.0)
+		_v = 2.0;
+	if(_v < -0.2)
+		_v = -0.2;
 }
 
 void Agent::Action()
@@ -69,15 +80,17 @@ void Agent::Action()
 	_p_prev[0] = _p[0];
 	_p_prev[1] = _p[1];
 
-	_p[0] += _v * _q[0];
-	_p[1] += _v * _q[1];
+	double time_step = 0.1;
+
+	_p[0] += _v * _q[0] * time_step;
+	_p[1] += _v * _q[1] * time_step;
 }
 
 void Agent::Revert(double* p, bool col)
 {
+	double vec[2];
 	if(col)
 	{
-		double vec[2];
 		vec[0] = _p[0] - p[0];
 		vec[1] = _p[1] - p[1];
 
@@ -86,7 +99,6 @@ void Agent::Revert(double* p, bool col)
 	}
 	else
 	{
-		double vec[2];
 		vec[0] = _p_prev[0] - _p[0];
 		vec[1] = _p_prev[1] - _p[1];
 

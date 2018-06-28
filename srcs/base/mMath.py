@@ -6,9 +6,17 @@ def AngleToCoor(angle):
 	coor = np.array([np.cos((angle)*np.pi / 180.0), np.sin((angle)*np.pi / 180.0)])
 	return coor
 
+def RadianToCoor(rad):
+	coor = np.array([np.cos(rad), np.sin(rad)])
+	return coor
+
 def CoorToAngle(coor):
 	angle = np.arctan2(coor[1], coor[0])*180.0 / np.pi
 	return angle
+
+def CoorToRadian(coor):
+	rad = np.arctan2(coor[1], coor[0])
+	return rad
 
 def Rotate2d(cos, sin, point):
 	return np.array([cos*point[0]+sin*point[1], -1*sin*point[0]+cos*point[1]])

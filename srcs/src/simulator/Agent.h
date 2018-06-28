@@ -8,13 +8,13 @@ class Agent{
 		double _q[2];
 		double _d[2];
 		double _v = 1.0;
-		double _r = 10.0;
+		double _r = 0.5;
 		int _fov = 190.0;
 		double _front = 0.0;
 		int _qlim = 20;
 		double* _dmap;
 		double* _vmap;
-		double _depth = 300.0;
+		double _depth = 30.0;
 		int _interval = 10;
 		bool _col = false;
 		bool _stop = false;

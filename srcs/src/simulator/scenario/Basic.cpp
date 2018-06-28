@@ -29,30 +29,30 @@ void Basic::initEvaluation()
 {
 	srand((unsigned int)time(0));
 
-	int eval_set_num = 6;
+	int eval_set_num = 4;
 	int rand_x, rand_y;
 	for(int i=0; i<eval_set_num; i++)
 	{
 		for(int j=0; j<agent_num/2; j++)
 		{
-			rand_x = rand()%10;
-			rand_y = rand()%20;
+			rand_x = rand()%6;
+			rand_y = rand()%36;
 
-			eval_agent_p_x.push_back(-30 + rand_x);
-			eval_agent_p_y.push_back(-10 + rand_y);
+			eval_agent_p_x.push_back(-28 + rand_x);
+			eval_agent_p_y.push_back(-18 + rand_y);
 			eval_agent_d_x.push_back(25);
-			eval_agent_d_y.push_back(-10 + rand_y);
+			eval_agent_d_y.push_back(-18 + rand()%36);
 		}
 
 		for(int j=agent_num/2; j<agent_num; j++)
 		{
-			rand_x = rand()%10;
-			rand_y = rand()%20;
+			rand_x = rand()%6;
+			rand_y = rand()%36;
 
-			eval_agent_p_x.push_back(20 + rand_x);
-			eval_agent_p_y.push_back(-10 + rand_y);
+			eval_agent_p_x.push_back(23 + rand_x);
+			eval_agent_p_y.push_back(-18 + rand_y);
 			eval_agent_d_x.push_back(-25);
-			eval_agent_d_y.push_back(-10 + rand_y);
+			eval_agent_d_y.push_back(-18 + rand()%36);
 		}
 
 		for(int j=0; j<obstacle_num; j++)
@@ -157,7 +157,7 @@ void Basic::ResetEnv()
 			if(i < agent_num/2)
 			{
 				pos[0] = -28 + rand_x;
-				pos[1] = -108 + rand_y;
+				pos[1] = -18 + rand_y;
 			}
 			else
 			{
@@ -189,7 +189,7 @@ void Basic::ResetEnv()
 		agent->setPprev(pos[0], pos[1]);
 		if(i < agent_num/2)
 		{
-			agent->setD(28.0, -20 + rand()%40);
+			agent->setD(25.0 + rand()%4 , -18 + rand()%36);
 			agent->setQ(1.0, 0.0);
 			agent->setFront(0.0);
 			agent->setColor(0.8, 0.2, 0.2);

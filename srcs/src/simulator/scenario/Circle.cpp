@@ -30,7 +30,7 @@ Circle::~Circle()
 
 void Circle::initEvaluation()
 {
-	int eval_set_num = 6;
+	int eval_set_num = 4;
 
 	srand((unsigned int)time(0));
 

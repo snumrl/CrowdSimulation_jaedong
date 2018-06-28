@@ -83,7 +83,7 @@ void Crossway::initEvaluation()
 {
 	srand((unsigned int)time(0));
 
-	int eval_set_num = 6;
+	int eval_set_num = 4;
 	int rand_x, rand_y;
 	double pos[2];
 	bool col = false;

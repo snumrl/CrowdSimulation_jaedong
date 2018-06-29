@@ -65,7 +65,7 @@ void Agent::setAction(double delta_t, double delta_v, bool isStop)
 
 	RadianToCoor(_front, _q);
 
-	_v += delta_v * time_step;
+	_v += delta_v * 0.5 * time_step;
 	if(_v > 2.0)
 		_v = 2.0;
 	if(_v < -0.2)

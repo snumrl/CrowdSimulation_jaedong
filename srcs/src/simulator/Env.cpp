@@ -334,7 +334,7 @@ double Env::getScore()
 	double d_square = pow(d,2);
 
 	// return -0.001*d_square;
-	return -0.1*d;
+	return -10.0*d;
 }
 
 void Env::addAgent(Agent* agent)

@@ -16,7 +16,7 @@ from crossway import Crossway
 from bottleneck import Bottleneck
 
 FLAG_USE_RECENT_CKPT = True
-FLAG_USE_REPLAY_MEMORY = True
+FLAG_USE_REPLAY_MEMORY = False
 FLAG_WARMUP_FOR_TRAINING = False
 
 class Experiment:
@@ -26,8 +26,8 @@ class Experiment:
 		self.initGL()
 		self.initFlag()
 
-		# SCENARIO = 'Basic'
-		SCENARIO = 'Corridor'
+		SCENARIO = 'Basic'
+		# SCENARIO = 'Corridor'
 		# SCENARIO = 'Bottleneck'
 		# SCENARIO = 'Crossway'
 		# SCENARIO = 'Circle'
@@ -193,12 +193,12 @@ class Experiment:
 
 		return action
 
-	def timer_func(self, fps=180):
+	def timer_func(self, fps=120):
 		if self.flag['replay']:
 			fps = 40
 			self.frame += 1
 		else:
-			fps = 180
+			fps = 240
 			self.frame = 0
 			if self.flag['train']:
 				if self.isTerm:

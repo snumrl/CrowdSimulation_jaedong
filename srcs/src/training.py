@@ -26,8 +26,8 @@ FLAG_M_REPLAY_SAVE = True
 class Experiment_Offline:
 	def __init__(self):
 
-		# self.SCENARIO = 'Basic'
-		self.SCENARIO = 'Corridor'
+		self.SCENARIO = 'Basic'
+		# self.SCENARIO = 'Corridor'
 		# self.SCENARIO = 'Bottleneck'
 		# self.SCENARIO = 'Crossway'
 		# self.SCENARIO = 'Circle'

@@ -77,7 +77,7 @@ class ActorNetwork():
 
 		w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
 		out = tflearn.fully_connected(
-			net, self.a_dim, activation='tanh', weights_init=w_init)
+			net, self.a_dim, weights_init=w_init)
 
 		return input_body, input_sensor, out
 

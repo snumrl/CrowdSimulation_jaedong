@@ -7,6 +7,8 @@ from OpenGL.GLUT import *
 
 import csim
 import numpy as np
+import math
+import copy
 from constants import Constants as cst
 from ddpg import DDPG
 from basic import Basic
@@ -16,7 +18,7 @@ from crossway import Crossway
 from bottleneck import Bottleneck
 
 FLAG_USE_RECENT_CKPT = True
-FLAG_USE_REPLAY_MEMORY = False
+FLAG_USE_REPLAY_MEMORY = True
 FLAG_WARMUP_FOR_TRAINING = False
 
 class Experiment:
@@ -26,12 +28,14 @@ class Experiment:
 		self.initGL()
 		self.initFlag()
 
-		SCENARIO = 'Basic'
-		# SCENARIO = 'Corridor'
+		# SCENARIO = 'Basic'
+		SCENARIO = 'Corridor'
 		# SCENARIO = 'Bottleneck'
 		# SCENARIO = 'Crossway'
 		# SCENARIO = 'Circle'
 		# SCENARIO = 'Valley'
+
+		self.scen = SCENARIO
 
 		self.setEnvironment(SCENARIO)
 		self.setNetwork()
@@ -187,9 +191,23 @@ class Experiment:
 
 	def convert_to_action_double(self, action):
 		action_len = len(action)
+		d_theta = 0;
+		d_pos = 0;
 		for i in range(action_len):
-			action[i]['theta'] = float(action[i]['theta'])
-			action[i]['velocity'] = float(action[i]['velocity'])
+			d_theta = float(action[i]['theta'])
+			d_pos = float(action[i]['velocity'])
+			# if d_theta > 0.25 * math.pi:
+			# 	d_theta = 0.25 * math.pi
+			# if d_theta < -0.25 * math.pi:
+			# 	d_theta = -0.25 * math.pi
+
+			# if d_pos > 2.0:
+			# 	d_pos = 2.0
+			# if d_pos <-0.2:
+			# 	d_pos = -0.2
+
+			action[i]['theta'] = copy.copy(d_theta)
+			action[i]['velocity'] = copy.copy(d_pos)
 
 		return action
 
@@ -211,6 +229,8 @@ class Experiment:
 
 				obs, action, memory = self.Execute(action_type='ACTOR', run_type='TRAIN')
 				memory['obs'] = self.convert_to_numpy(memory['obs'])
+
+				print "Action  : ", action[0]
 
 				self.Scenario.setObjectData(memory['obs'])
 
@@ -310,6 +330,15 @@ class Experiment:
 				print "Policy : Greedy"
 				self.flag['play'] = True
 				self.flag['greedy'] = True
+			# elif key == 'm':
+			# 	print "memorize"
+			# 	if len(self.Scenario.record_agent_p) > 0:
+			# 		self.Memorize()
+
+	# def Memorize(self):
+	# 	f = open(".../data/ckpt/memorize/" + "memory_"+self.scen+, 'w')
+	# 	f.write("agent "+len(self.Scenario.))
+	# 	f.close()
 
 	def reshape(self, w, h):
 		glEnable(GL_DEPTH_TEST)

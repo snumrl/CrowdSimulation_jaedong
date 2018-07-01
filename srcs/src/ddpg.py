@@ -70,7 +70,7 @@ class DDPG:
 		agent_num = len(obs['agent'])
 		for i in range(0, agent_num):
 			agent_obs = obs['agent'][i]
-			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < cst.AGENT_RADIUS + 0.5:
+			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < cst.AGENT_RADIUS + 2.0:
 				action = {}
 				action['theta'] = 0
 				action['velocity'] = 0
@@ -180,8 +180,10 @@ class DDPG:
 			if agent_obs['d_map'][angle] < 0.5+offset:
 				continue
 
-			curr_angle = 190/2 - angle*10
-			curr_q = mMath.AngleToCoor(curr_angle + agent_obs['front']) * agent_obs['d_map'][angle]
+			# curr_angle = 190/2 - angle*10
+			curr_angle = (190/2 - angle*10)/180.0*3.141592
+			# curr_q = mMath.AngleToCoor(curr_angle + agent_obs['front']) * agent_obs['d_map'][angle]
+			curr_q = mMath.RadianToCoor(curr_angle + agent_obs['front']) * agent_obs['d_map'][angle]
 			curr_dis = direction[0]*curr_q[0] +  direction[1]*curr_q[1]
 			if greedy_dir == 0:
 				if (greedy_dis is None) or (greedy_dis < curr_dis):
@@ -195,7 +197,7 @@ class DDPG:
 					next_q = curr_q
 
 		action={}
-		action['theta'] = np.clip(next_angle, -10, 10) / 10.0
+		action['theta'] = np.clip(next_angle, -1.0/5.7, 1.0/5.7) / 10.0
 
 		if greedy_dis is None:
 			action['velocity'] = -1
@@ -269,6 +271,7 @@ class DDPG:
 			state_ = copy.copy(self.preprocess(m['state']))
 			state_body = copy.copy(state_['body'])
 			state_sensor = copy.copy(state_['sensor'])
+			# print "action: ", m['action']
 			action = copy.copy(np.array([m['action']['theta'], m['action']['velocity']]))
 			actor_body_batch.append(state_body[0])
 			actor_sensor_batch.append(state_sensor[0])
@@ -456,7 +459,8 @@ class DDPG:
 		# print "pd_len : ", pd_len
 
 		# return [v, relative_dir[0], relative_dir[1], pd_len]
-		return [v, relative_dir[0]*pd_len, relative_dir[1]*pd_len]
+		# print "body : ", [relative_dir[0]*pd_len, relative_dir[1]*pd_len]
+		return [relative_dir[0], relative_dir[1], pd_len]
 
 		# pd = np.array(d_-p_)
 		# pd_len = np.linalg.norm(pd)

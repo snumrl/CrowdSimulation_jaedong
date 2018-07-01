@@ -82,13 +82,13 @@ class Corridor:
 
 		glColor3f(0.3, 0.3, 0.3)
 		glPushMatrix()
-		glTranslatef(0, 15, 2)
+		glTranslatef(0, 13, 2)
 		glScalef(60, 10, 4)
 		glutSolidCube(1.0)
 		glPopMatrix()
 
 		glPushMatrix()
-		glTranslatef(0, -15, 2)
+		glTranslatef(0, -13, 2)
 		glScalef(60, 10, 4)
 		glutSolidCube(1.0)
 		glPopMatrix()
@@ -137,3 +137,5 @@ class Corridor:
 			self.obstacles[i].setP(self.record_obs_p[i])
 
 		self.render()
+
+

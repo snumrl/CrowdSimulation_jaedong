@@ -19,8 +19,8 @@ import numpy as np
 import mMath
 import time
 
-FLAG_USE_RECENT_CKPT = True
-FLAG_M_REPLAY_LOAD = True
+FLAG_USE_RECENT_CKPT = False
+FLAG_M_REPLAY_LOAD = False
 FLAG_M_REPLAY_SAVE = True
 
 class Experiment_Offline:

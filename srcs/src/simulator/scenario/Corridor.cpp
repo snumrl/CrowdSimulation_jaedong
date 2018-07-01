@@ -24,13 +24,13 @@ Corridor::Corridor(int agent_n, int obs_n)
 	// double l2 = 1200;
 	// Wall* w2 = new Wall(st2, p2, l2, n2);
 
-	double st1[2] = {-30, 10};
+	double st1[2] = {-30, 8};
 	double p1[2] = {1.0, 0.0};
 	double n1[2] = {0.0, -1.0};
 	double l1 = 60;
 	Wall* w1 = new Wall(st1, p1, l1, n1);
 
-	double st2[2] = {-30, -10};
+	double st2[2] = {-30, -8};
 	double p2[2] = {1.0, 0.0};
 	double n2[2] = {0.0, 1.0};
 	double l2 = 60;
@@ -218,17 +218,17 @@ void Corridor::ResetEnv()
 		while(true)
 		{
 			rand_x = rand()%3;
-			rand_y = rand()%18;
+			rand_y = rand()%14;
 
 			if(i < agent_num/2)
 			{
-				pos[0] = -24 + rand_x;
-				pos[1] = -9 + rand_y;
+				pos[0] = -15 + rand_x;
+				pos[1] = -7 + rand_y;
 			}
 			else
 			{
-				pos[0] = 22 + rand_x;
-				pos[1] = -9 + rand_y;
+				pos[0] = 12 + rand_x;
+				pos[1] = -7 + rand_y;
 			}
 
 			col = false;
@@ -239,7 +239,7 @@ void Corridor::ResetEnv()
 			for(int j=start_idx; j<i; j++)
 			{
 				r_j = getAgent(j)->getR();
-				if(Dist(pos, getAgent(j)->getP()) < r_j * 2)
+				if(Dist(pos, getAgent(j)->getP()) < r_j * 2 + 0.1)
 				{
 					col = true;
 					break;
@@ -255,7 +255,7 @@ void Corridor::ResetEnv()
 		agent->setPprev(pos[0], pos[1]);
 		if(i < agent_num/2)
 		{
-			agent->setD(24.0, -10 + rand()%20);
+			agent->setD(15.0, -7 + rand()%14);
 			// agent->setD(400.0, pos[1]);
 			agent->setQ(1.0, 0.0);
 			agent->setFront(0.0);
@@ -263,7 +263,7 @@ void Corridor::ResetEnv()
 		}
 		else
 		{
-			agent->setD(-24.0, -10 + rand()%20);
+			agent->setD(-15.0, -7 + rand()%14);
 			// agent->setD(-400.0, pos[1]);
 			agent->setQ(-1.0, 0.0);
 			// agent->setFront(180.0);

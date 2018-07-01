@@ -8,6 +8,9 @@ class Agent{
 		double _q[2];
 		double _d[2];
 		double _v = 1.0;
+		double _v_sim = 1.0;
+		double _w = 0.0;
+		double _w_sim = 0.0;
 		double _r = 0.5;
 		int _fov = 190.0;
 		double _front = 0.0;
@@ -38,6 +41,9 @@ class Agent{
 		void setQ(double x, double y) {_q[0] = x; _q[1] = y;};
 		void setD(double x, double y) {_d[0] = x; _d[1] = y;};
 		void setV(double v) {_v = v;};
+		void setVsim(double v) {_v_sim = v;};
+		void setW(double w) {_w = w;};
+		void setWsim(double w) {_w_sim = w;};
 		void setR(double r) {_r = r;};
 		void setFov(int f) {_fov = f;};
 		void setFront(double f) {_front = f;};
@@ -55,6 +61,9 @@ class Agent{
 		double* getQ() {return _q;};
 		double* getD() {return _d;};
 		double getV() {return _v;};
+		double getW() {return _w;};
+		double getVsim() {return _v_sim;};
+		double getWsim() {return _w_sim;};
 		double getR() {return _r;};
 		int getFov() {return _fov;};
 		double getFront() {return _front;};

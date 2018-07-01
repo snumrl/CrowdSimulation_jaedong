@@ -226,10 +226,20 @@ void Env::depth_by_walls(double* angle, Agent* agent, double* _map, int idx)
 
 void Env::Update()
 {
+	double time_step = 0.1;
 	// collision check
 	double prev_score = getScore();
+	// double prev_vel = Dist(_agents.at(0)->getP(), _agents.at(0)->getPprev())/time_step;
 	for(int i=0; i<agent_num; i++)
 		_agents.at(i)->Action();
+
+	// double cur_vel = Dist(_agents.at(0)->getP(), _agents.at(0)->getPprev())/time_step;
+
+	double smooth_v = -0.4 * (_agents.at(0)->getV()-1.5) * (_agents.at(0)->getV()-1.5);
+	double smooth_w = -0.1 * (_agents.at(0)->getW()) * (_agents.at(0)->getW());
+	double score_smooth = smooth_v + smooth_w;
+	// double score_smooth = -0.01 * fabs(cur_vel - prev_vel) / time_step; // - w * a
+	cout << "smooth : " << score_smooth << endl;
 
 	_agents.at(0)->setCol(false);
 	for(int i=0; i<agent_num; i++)
@@ -291,12 +301,17 @@ void Env::Update()
 	}
 
 	double next_score = getScore();
-	double score = next_score - prev_score;
+	double score_target = next_score - prev_score;
+
+	cout << "target : " << score_target << endl;
+	double score = score_target + score_smooth;
+	// double score = score_target;
 
 	if(_agents.at(0)->getCol())
 		score = -1.0;
 
 	_reward = score;
+	// _reward = next_score + score_smooth;
 
 	_cur_step += 1;
 }
@@ -314,7 +329,7 @@ bool Env::isTerm(bool isTest)
 	if(_agents.at(0)->getCol())
 		return true;
 
-	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 1.5)
+	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 3.0)
 		return true;
 
 	if(_cur_step > _max_step)

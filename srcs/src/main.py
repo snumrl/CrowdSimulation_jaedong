@@ -18,7 +18,7 @@ from crossway import Crossway
 from bottleneck import Bottleneck
 
 FLAG_USE_RECENT_CKPT = True
-FLAG_USE_REPLAY_MEMORY = True
+FLAG_USE_REPLAY_MEMORY = False
 FLAG_WARMUP_FOR_TRAINING = False
 
 class Experiment:
@@ -196,16 +196,6 @@ class Experiment:
 		for i in range(action_len):
 			d_theta = float(action[i]['theta'])
 			d_pos = float(action[i]['velocity'])
-			# if d_theta > 0.25 * math.pi:
-			# 	d_theta = 0.25 * math.pi
-			# if d_theta < -0.25 * math.pi:
-			# 	d_theta = -0.25 * math.pi
-
-			# if d_pos > 2.0:
-			# 	d_pos = 2.0
-			# if d_pos <-0.2:
-			# 	d_pos = -0.2
-
 			action[i]['theta'] = copy.copy(d_theta)
 			action[i]['velocity'] = copy.copy(d_pos)
 
@@ -216,7 +206,7 @@ class Experiment:
 			fps = 40
 			self.frame += 1
 		else:
-			fps = 240
+			fps = 40
 			self.frame = 0
 			if self.flag['train']:
 				if self.isTerm:
@@ -230,7 +220,8 @@ class Experiment:
 				obs, action, memory = self.Execute(action_type='ACTOR', run_type='TRAIN')
 				memory['obs'] = self.convert_to_numpy(memory['obs'])
 
-				print "Action  : ", action[0]
+				if action[0]['velocity'] < 0.4 or action[0]['velocity'] > 0.8:
+					print "Action  : ", action[0]
 
 				self.Scenario.setObjectData(memory['obs'])
 
@@ -251,6 +242,9 @@ class Experiment:
 
 				memory['obs'] = self.convert_to_numpy(memory['obs'])
 				self.Scenario.setObjectData(memory['obs'])
+
+				if action[0]['velocity'] < 0.4 or action[0]['velocity'] > 0.8:
+					print "Action  : ", action[0]
 
 				if memory['isTerm']:
 						self.flag['play'] = False

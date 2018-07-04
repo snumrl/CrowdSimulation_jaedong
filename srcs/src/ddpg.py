@@ -70,7 +70,7 @@ class DDPG:
 		agent_num = len(obs['agent'])
 		for i in range(0, agent_num):
 			agent_obs = obs['agent'][i]
-			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < cst.AGENT_RADIUS + 2.0:
+			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < cst.AGENT_RADIUS + 0.5:
 				action = {}
 				action['theta'] = 0
 				action['velocity'] = 0
@@ -396,16 +396,6 @@ class DDPG:
 		self.rm = pickle.load(f_rm)
 		f_rm.close()
 
-		# for i in range(len(self.rm.memory['actor'])):
-		# 	self.rm.memory['actor'][i]['state'] = self.rm.memory['actor'][i]['state']['agent'][0]
-		# 	self.rm.memory['actor'][i]['action'] = self.rm.memory['actor'][i]['action'][0]
-		# 	self.rm.memory['actor'][i]['next_state'] = self.rm.memory['actor'][i]['next_state']['agent'][0]
-
-		# for i in range(len(self.rm.memory['critic'])):
-		# 	self.rm.memory['critic'][i]['state'] = self.rm.memory['critic'][i]['state']['agent'][0]
-		# 	self.rm.memory['critic'][i]['action'] = self.rm.memory['critic'][i]['action'][0]
-		# 	self.rm.memory['critic'][i]['next_state'] = self.rm.memory['critic'][i]['next_state']['agent'][0]
-
 		print "Load Replay Memory :  ", cst.RM_PATH,"rm_",recent_file_name
 
 	def load_eval(self):
@@ -436,7 +426,7 @@ class DDPG:
 		width = 60
 		height = 40
 
-		_len = np.sqrt(width*width +  height*height)
+		_len = np.sqrt(width*width + height*height) * 0.8
 
 		p_[0] = p_[0] / _len
 		p_[1] = p_[1] / _len
@@ -449,17 +439,16 @@ class DDPG:
 
 		pd = np.array(d_-p_)
 		pd_len = np.linalg.norm(pd)
+		if pd_len == 0:
+			pd_len = 0.1
 		pd_ = pd / pd_len
 
 		relative_dir = []
 		relative_dir.append(mMath.InnerProduct(q_, pd_))
 		relative_dir.append(mMath.CrossProduct(q_, pd_))
 
-		# print "relative_dir : ", relative_dir[0], ", ", relative_dir[1]
-		# print "pd_len : ", pd_len
-
 		# return [v, relative_dir[0], relative_dir[1], pd_len]
-		# print "body : ", [relative_dir[0]*pd_len, relative_dir[1]*pd_len]
+		# print "body : ", [relative_dir[0], relative_dir[1], pd_len]
 		return [relative_dir[0], relative_dir[1], pd_len]
 
 		# pd = np.array(d_-p_)
@@ -494,7 +483,7 @@ class DDPG:
 
 class OUNoise:
 	"""docstring for OUNoise"""
-	def __init__(self, action_dimension, mu=0, theta=0.15, sigma=0.2):
+	def __init__(self, action_dimension, mu=0, theta=0.15, sigma=0.1):
 		self.ou_action_dimension = action_dimension
 		self.mu = mu
 		self.theta = theta

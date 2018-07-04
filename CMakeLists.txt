@@ -9,7 +9,7 @@ find_package(PythonLibs)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
-file(GLOB srcs "srcs/src/simulator/*.cpp" "srcs/src/simulator/*.h")
+file(GLOB srcs "srcs/src/simulator/*.cpp" "srcs/src/simulator/*.h" "srcs/src/simulator/scenario/*.cpp" "srcs/src/simulator/scenario/*.h")
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${PYTHON_INCLUDE_DIRS})

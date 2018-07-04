@@ -151,8 +151,8 @@ void Basic::ResetEnv()
 	{
 		while(true)
 		{
-			rand_x = rand()%6;
-			rand_y = rand()%36;
+			rand_x = rand()%40;
+			rand_y = rand()%40;
 
 			if(i < agent_num/2)
 			{
@@ -161,8 +161,8 @@ void Basic::ResetEnv()
 			}
 			else
 			{
-				pos[0] = 23 + rand_x;
-				pos[1] = -18 + rand_y;
+				pos[0] = -20 + rand_x;
+				pos[1] = -20 + rand_y;
 			}
 
 			col = false;
@@ -196,7 +196,7 @@ void Basic::ResetEnv()
 		}
 		else
 		{
-			agent->setD(-29.0 + rand()%4, -18 + rand()%36);
+			agent->setD( -20 + rand()%40, -20 + rand()%40);
 			agent->setQ(-1.0, 0.0);
 			// agent->setFront(180);
 			agent->setFront(3.14);

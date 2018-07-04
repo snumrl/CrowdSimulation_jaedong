@@ -11,7 +11,7 @@
 using namespace boost::python;
 using namespace std;
 
-#define AGENT_NUM 16
+#define AGENT_NUM 20
 #define OBSTACLE_NUM 0
 
 static double time_step = 1.0;

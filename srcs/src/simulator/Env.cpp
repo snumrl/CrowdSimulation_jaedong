@@ -235,11 +235,13 @@ void Env::Update()
 
 	// double cur_vel = Dist(_agents.at(0)->getP(), _agents.at(0)->getPprev())/time_step;
 
-	double smooth_v = -0.4 * (_agents.at(0)->getV()-1.5) * (_agents.at(0)->getV()-1.5);
-	double smooth_w = -0.1 * (_agents.at(0)->getW()) * (_agents.at(0)->getW());
+	double smooth_v = -4.0 * (_agents.at(0)->getV()-0.6) * (_agents.at(0)->getV()-0.6);
+	double smooth_w = -1.0 * (_agents.at(0)->getW()) * (_agents.at(0)->getW());
 	double score_smooth = smooth_v + smooth_w;
 	// double score_smooth = -0.01 * fabs(cur_vel - prev_vel) / time_step; // - w * a
-	cout << "smooth : " << score_smooth << endl;
+	// cout << "smooth v : " << smooth_v << endl;
+	// cout << "smooth w : " << smooth_w << endl;
+	// cout << "smooth : " << score_smooth << endl;
 
 	_agents.at(0)->setCol(false);
 	for(int i=0; i<agent_num; i++)
@@ -303,12 +305,14 @@ void Env::Update()
 	double next_score = getScore();
 	double score_target = next_score - prev_score;
 
-	cout << "target : " << score_target << endl;
+	// cout << "target : " << score_target << endl;
 	double score = score_target + score_smooth;
+	// double score = score_smooth;
 	// double score = score_target;
+	// cout << "score : " << score << endl;
 
 	if(_agents.at(0)->getCol())
-		score = -1.0;
+		score = -10.0;
 
 	_reward = score;
 	// _reward = next_score + score_smooth;
@@ -332,6 +336,15 @@ bool Env::isTerm(bool isTest)
 	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 3.0)
 		return true;
 
+	if(_agents.at(0)->getP()[0] >= _agents.at(0)->getD()[0])
+		return true;
+
+	if(_agents.at(0)->getP()[0] < -30)
+		return true;
+
+	if(_agents.at(0)->getP()[0] > 30)
+		return true;
+
 	if(_cur_step > _max_step)
 		return true;
 
@@ -349,7 +362,7 @@ double Env::getScore()
 	double d_square = pow(d,2);
 
 	// return -0.001*d_square;
-	return -10.0*d;
+	return -0.5*d;
 }
 
 void Env::addAgent(Agent* agent)

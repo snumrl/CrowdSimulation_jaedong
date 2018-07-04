@@ -75,9 +75,10 @@ class ActorNetwork():
 		net = tflearn.activation(
 			tf.matmul(body_net, t1.W) + tf.matmul(sensor_net, t2.W) + t2.b, activation='elu')
 
-		w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
+		# w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
+		w_init = tflearn.initializations.xavier(uniform=True, seed=None, dtype=tf.float32)
 		out = tflearn.fully_connected(
-			net, self.a_dim, weights_init=w_init)
+			net, self.a_dim, activation='tanh', weights_init=w_init)
 
 		return input_body, input_sensor, out
 
@@ -189,7 +190,8 @@ class CriticNetwork():
 		net = tflearn.activation(
 			tf.matmul(body_net, t1.W) + tf.matmul(sensor_net, t2.W) + tf.matmul(action, t3.W) + t3.b, activation='elu')
 
-		w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
+		# w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
+		w_init = tflearn.initializations.xavier(uniform=True, seed=None, dtype=tf.float32)
 		out = tflearn.fully_connected(net, 1, weights_init=w_init)
 
 		return input_body, input_sensor, action, out

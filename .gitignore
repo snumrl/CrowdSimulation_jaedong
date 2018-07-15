@@ -1,6 +1,5 @@
 *.pyc
 *.ckpt
-*.txt
 *.ckpt.*
 ckeckpoint
 

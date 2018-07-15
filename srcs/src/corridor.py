@@ -80,18 +80,18 @@ class Corridor:
 		for i in range(1, self.agent_count):
 			self.agents[i].render(False, trajectory, i)
 
-		glColor3f(0.3, 0.3, 0.3)
-		glPushMatrix()
-		glTranslatef(0, 13, 2)
-		glScalef(60, 10, 4)
-		glutSolidCube(1.0)
-		glPopMatrix()
+		# glColor3f(0.3, 0.3, 0.3)
+		# glPushMatrix()
+		# glTranslatef(0, 13, 2)
+		# glScalef(60, 10, 4)
+		# glutSolidCube(1.0)
+		# glPopMatrix()
 
-		glPushMatrix()
-		glTranslatef(0, -13, 2)
-		glScalef(60, 10, 4)
-		glutSolidCube(1.0)
-		glPopMatrix()
+		# glPushMatrix()
+		# glTranslatef(0, -13, 2)
+		# glScalef(60, 10, 4)
+		# glutSolidCube(1.0)
+		# glPopMatrix()
 
 		for i in range(len(self.walls)):
 			self.walls[i].render()

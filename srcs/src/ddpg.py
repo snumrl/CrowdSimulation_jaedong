@@ -389,7 +389,7 @@ class DDPG:
 	def load_memory(self):
 		f = open(cst.RM_PATH+"checkpoint", 'r')
 		recent_file_name = f.readline()
-		# recent_file_name = recent_file_name[:-1]
+		recent_file_name = recent_file_name[:-1]
 		f.close()
 
 		f_rm = open(cst.RM_PATH+"rm_"+recent_file_name, 'r')

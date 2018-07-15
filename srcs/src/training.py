@@ -19,9 +19,10 @@ import numpy as np
 import mMath
 import time
 
-FLAG_USE_RECENT_CKPT = False
-FLAG_M_REPLAY_LOAD = False
+FLAG_USE_RECENT_CKPT = True
+FLAG_M_REPLAY_LOAD = True
 FLAG_M_REPLAY_SAVE = True
+FLAG_EVALUATION_LOAD = False
 
 class Experiment_Offline:
 	def __init__(self):
@@ -131,7 +132,7 @@ class Experiment_Offline:
 		step_count=0
 		for iteration in range(1, self.train_iter):
 			if self.isTerm:
-				print "Reset New Episode : ", step_count," Steps"
+				print "Reset New Episode : ", step_count-1," Steps"
 				self.Algorithm.expl_rate_decay()
 
 				self.isTerm = False
@@ -177,10 +178,11 @@ class Experiment_Offline:
 		total_reward = 0
 		for i in range(evaluation_num):
 			self.Parser.Reset(i)
-			for j in range(200):
+			for j in range(300):
 				obs, action, memory = self.Execute(action_type='ACTOR', run_type='TRAIN')
 
 				total_reward += memory['reward']
+
 				step_count += 1
 				if memory['isTerm']:
 					break
@@ -223,12 +225,16 @@ if __name__=="__main__":
 		experiment.Algorithm.load_network(type='actor')
 		experiment.Algorithm.load_network(type='critic')
 		if FLAG_M_REPLAY_LOAD:
-				experiment.Algorithm.load_memory()
-				experiment.Algorithm.load_eval()
+			experiment.Algorithm.load_memory()
 
-		experiment.EvaluateList = experiment.Algorithm.eval
+		if FLAG_EVALUATION_LOAD:
+			experiment.Algorithm.load_eval()
+			experiment.EvaluateList = experiment.Algorithm.eval
 
-	if not FLAG_M_REPLAY_LOAD:
-		experiment.WarmUp()
+	if not FLAG_EVALUATION_LOAD:
+		experiment.EvaluateList = []
+
+	# if not FLAG_M_REPLAY_LOAD:
+	# 	experiment.WarmUp()
 
 	experiment.Train()

@@ -226,19 +226,28 @@ void Env::depth_by_walls(double* angle, Agent* agent, double* _map, int idx)
 
 void Env::Update()
 {
-	double time_step = 0.1;
-	// collision check
 	double prev_score = getScore();
-	// double prev_vel = Dist(_agents.at(0)->getP(), _agents.at(0)->getPprev())/time_step;
 	for(int i=0; i<agent_num; i++)
 		_agents.at(i)->Action();
 
-	// double cur_vel = Dist(_agents.at(0)->getP(), _agents.at(0)->getPprev())/time_step;
+	double cur_v = _agents.at(0)->getV();
+	double cur_w = _agents.at(0)->getV();
+	double smooth_v = 0.0;
+	double smooth_w = 0.0;
+	double w_v = -4.0;
+	double w_w = -2.0;
 
-	double smooth_v = -4.0 * (_agents.at(0)->getV()-0.6) * (_agents.at(0)->getV()-0.6);
-	double smooth_w = -1.0 * (_agents.at(0)->getW()) * (_agents.at(0)->getW());
+	if(cur_v > 0.6)
+		smooth_v = w_v * (cur_v - 0.6) * (cur_v - 0.6);
+	if(cur_v < -0.84)
+		smooth_v = w_v * (cur_v + 0.84) * (cur_v + 0.84);
+	if(cur_w > 0.1)
+		smooth_w = w_w * (cur_w - 0.1) * (cur_w - 0.1);
+	if(cur_w < -0.1)
+		smooth_w = w_w * (cur_w + 0.1) * (cur_w + 0.1);
+	// smooth_w = w_w * (cur_w) * (cur_w);
+
 	double score_smooth = smooth_v + smooth_w;
-	// double score_smooth = -0.01 * fabs(cur_vel - prev_vel) / time_step; // - w * a
 	// cout << "smooth v : " << smooth_v << endl;
 	// cout << "smooth w : " << smooth_w << endl;
 	// cout << "smooth : " << score_smooth << endl;
@@ -259,7 +268,7 @@ void Env::Update()
 				other_agent = _agents.at(j);
 
 				double d = Dist(cur_agent->getP(), other_agent->getP());
-				double r = cur_agent->getR() + other_agent->getR() + 0.1;
+				double r = cur_agent->getR() + other_agent->getR();
 				if(d < r)
 				{
 					isCol = true;
@@ -305,19 +314,20 @@ void Env::Update()
 	double next_score = getScore();
 	double score_target = next_score - prev_score;
 
-	// cout << "target : " << score_target << endl;
 	double score = score_target + score_smooth;
-	// double score = score_smooth;
-	// double score = score_target;
+	// cout << "target : " << score_target << endl;
 	// cout << "score : " << score << endl;
 
 	if(_agents.at(0)->getCol())
-		score = -10.0;
+		score = -3.0;
 
 	_reward = score;
-	// _reward = next_score + score_smooth;
 
 	_cur_step += 1;
+	// if(cur_v * 1.25 + 0.75 >  1.5)
+	// 	cout << "v : " << cur_v * 1.25 + 0.75 << endl;
+	// if(cur_w < 0.1 && cur_w > -0.1)
+	// 	cout << "w : " << cur_w * 1.5 << endl;
 }
 
 void Env::setAction(int i, double t, double v, bool s)
@@ -330,14 +340,14 @@ bool Env::isTerm(bool isTest)
 	if(isTest)
 		return false;
 
-	if(_agents.at(0)->getCol())
-		return true;
+	// if(_agents.at(0)->getCol())
+	// 	return true;
 
 	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 3.0)
 		return true;
 
-	if(_agents.at(0)->getP()[0] >= _agents.at(0)->getD()[0])
-		return true;
+	// if(_agents.at(0)->getP()[0] >= _agents.at(0)->getD()[0])
+	// 	return true;
 
 	if(_agents.at(0)->getP()[0] < -30)
 		return true;
@@ -362,7 +372,7 @@ double Env::getScore()
 	double d_square = pow(d,2);
 
 	// return -0.001*d_square;
-	return -0.5*d;
+	return -10.0*d;
 }
 
 void Env::addAgent(Agent* agent)

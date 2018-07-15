@@ -44,17 +44,7 @@ void Agent::setAction(double delta_t, double delta_v, bool isStop)
 		_stop = true;
 		return ;
 	}
-	double time_step = 0.3;
-
-	// _front += delta_t * 60 * time_step;
-	// if(_front > 180)
-	// 	_front -= 360;
-	// if(_front < -180)
-	// 	_front += 360;
-
-	// AngleToCoor(_front, _q);
-
-	// _v += delta_v * 0.5 * time_step;
+	double time_step = 0.1;
 
 	_v = delta_v;
 	_v_sim = 1.25*delta_v + 0.75;
@@ -89,7 +79,7 @@ void Agent::Action()
 	_p_prev[0] = _p[0];
 	_p_prev[1] = _p[1];
 
-	double time_step = 0.3;
+	double time_step = 0.1;
 
 	_p[0] += _v_sim * _q[0] * time_step;
 	_p[1] += _v_sim * _q[1] * time_step;
@@ -103,8 +93,8 @@ void Agent::Revert(double* p, bool col)
 		vec[0] = _p[0] - p[0];
 		vec[1] = _p[1] - p[1];
 
-		_p[0] += 0.3*vec[0];
-		_p[1] += 0.3*vec[1];
+		_p[0] += 0.2*vec[0];
+		_p[1] += 0.2*vec[1];
 	}
 	else
 	{

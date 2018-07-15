@@ -33,7 +33,6 @@ class Experiment:
 		# SCENARIO = 'Bottleneck'
 		# SCENARIO = 'Crossway'
 		# SCENARIO = 'Circle'
-		# SCENARIO = 'Valley'
 
 		self.scen = SCENARIO
 
@@ -52,6 +51,7 @@ class Experiment:
 		self.isTerm = False
 		self.train_iter = 0
 		self.episode_iter = 0
+		self.fps = 120
 
 		self.timer_func()
 		glutMainLoop()
@@ -104,7 +104,6 @@ class Experiment:
 			self.Scenario = Circle(obs)
 		elif SCENARIO == 'Bottleneck':
 			self.Scenario = Bottleneck(obs)
-
 
 	def setNetwork(self):
 		network_dim = []
@@ -203,10 +202,10 @@ class Experiment:
 
 	def timer_func(self, fps=120):
 		if self.flag['replay']:
-			fps = 40
+			fps = self.fps
 			self.frame += 1
 		else:
-			fps = 40
+			fps = self.fps
 			self.frame = 0
 			if self.flag['train']:
 				if self.isTerm:
@@ -220,9 +219,6 @@ class Experiment:
 				obs, action, memory = self.Execute(action_type='ACTOR', run_type='TRAIN')
 				memory['obs'] = self.convert_to_numpy(memory['obs'])
 
-				if action[0]['velocity'] < 0.4 or action[0]['velocity'] > 0.8:
-					print "Action  : ", action[0]
-
 				self.Scenario.setObjectData(memory['obs'])
 
 				if memory['isTerm']:
@@ -231,8 +227,14 @@ class Experiment:
 
 				self.Update('ACTOR', obs, action, memory)
 				self.train_iter += 1
-				if self.train_iter % 2000 == 0:
+				if self.train_iter % 1000 == 0:
 					print "train iter : ", self.train_iter
+
+				# if self.train_iter == 30000:
+				# 	print "Stopped Training...!"
+				# 	self.save_network(m_replay = True)
+				# 	self.flag['train'] = not self.flag['train']
+				# 	self.flag['play'] = False
 
 			elif self.flag['play']:
 				if self.flag['greedy']:
@@ -242,9 +244,6 @@ class Experiment:
 
 				memory['obs'] = self.convert_to_numpy(memory['obs'])
 				self.Scenario.setObjectData(memory['obs'])
-
-				if action[0]['velocity'] < 0.4 or action[0]['velocity'] > 0.8:
-					print "Action  : ", action[0]
 
 				if memory['isTerm']:
 						self.flag['play'] = False
@@ -285,6 +284,12 @@ class Experiment:
 					print "Start Training...!"
 				self.flag['train'] = not self.flag['train']
 				self.flag['play'] = False
+			elif key == '=':
+				self.fps += 10
+				print "fps : ", self.fps
+			elif key == '-':
+				self.fps -= 10
+				print "fps : ", self.fps
 			elif key == 's':
 				if self.flag['record']:
 					print "STOP record"
@@ -340,7 +345,7 @@ class Experiment:
 		glViewport(0, 0, w, h)
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		glOrtho(-30, 30, -20, 20, -5, 5)
+		glOrtho(-30, 30, -20, 20, -3, 3)
 		# gluPerspective(5.0, 1260.0/680.0, 0.1, 1000)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
@@ -349,16 +354,16 @@ class Experiment:
 		for i in range(10):
 			for j in range(10):
 				glPushMatrix()
-				glTranslatef(-1000 + i * 200 + 100, -1000 + j * 200 + 100, 0)
+				glTranslatef(-50 + i * 10 + 5, -50 + j * 10 + 5 , 0)
 				if (i+j) % 2 ==0:
-					glColor3f(0.5, 0.5, 0.5)
+					glColor3f(0.4, 0.4, 0.4)
 				else:
 					glColor3f(0.7, 0.7, 0.7)
 				glBegin(GL_QUADS)
-				glVertex3f( -100.0,  -100.0, 0)
-				glVertex3f( -100.0,   100.0, 0)
-				glVertex3f(  100.0,   100.0, 0)
-				glVertex3f(  100.0,  -100.0, 0)
+				glVertex3f( -10.0,  -10.0, 0)
+				glVertex3f( -10.0,   10.0, 0)
+				glVertex3f(  10.0,   10.0, 0)
+				glVertex3f(  10.0,  -10.0, 0)
 				glEnd()
 				glPopMatrix()
 
@@ -369,11 +374,11 @@ class Experiment:
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
-		gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0)
+		gluLookAt(0, 0, 3, 0, 0, 0, 0, 1, 0)
 
-		# glPushMatrix()
-		# self.render_base()
-		# glPopMatrix()
+		glPushMatrix()
+		self.render_base()
+		glPopMatrix()
 
 		glPushMatrix()
 		if self.flag['replay'] and self.Scenario.record_size != 0:

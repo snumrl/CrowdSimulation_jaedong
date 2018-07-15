@@ -33,26 +33,23 @@ void Basic::initEvaluation()
 	int rand_x, rand_y;
 	for(int i=0; i<eval_set_num; i++)
 	{
-		for(int j=0; j<agent_num/2; j++)
+		for(int j=0; j<agent_num; j++)
 		{
-			rand_x = rand()%6;
-			rand_y = rand()%36;
+			rand_x = rand()%15;
+			rand_y = rand()%40;
 
-			eval_agent_p_x.push_back(-28 + rand_x);
-			eval_agent_p_y.push_back(-18 + rand_y);
-			eval_agent_d_x.push_back(25);
-			eval_agent_d_y.push_back(-18 + rand()%36);
-		}
-
-		for(int j=agent_num/2; j<agent_num; j++)
-		{
-			rand_x = rand()%6;
-			rand_y = rand()%36;
-
-			eval_agent_p_x.push_back(23 + rand_x);
-			eval_agent_p_y.push_back(-18 + rand_y);
-			eval_agent_d_x.push_back(-25);
-			eval_agent_d_y.push_back(-18 + rand()%36);
+			if(j<agent_num/2){
+				eval_agent_p_x.push_back(-30 + rand_x);
+				eval_agent_p_y.push_back(-20 + rand_y);
+				eval_agent_d_x.push_back( 0 + rand()%15);
+				eval_agent_d_y.push_back(-20 + rand()%40);
+			}
+			else{
+				eval_agent_p_x.push_back(15 + rand_x);
+				eval_agent_p_y.push_back(-20 + rand_y);
+				eval_agent_d_x.push_back(-15 + rand()%15);
+				eval_agent_d_y.push_back(-20 + rand()%40);
+			}
 		}
 
 		for(int j=0; j<obstacle_num; j++)
@@ -100,7 +97,6 @@ void Basic::ResetEval(int idx)
 		{
 			agent->setQ(-1.0, 0.0);
 			agent->setFront(3.14);
-			// agent->setFront(180);
 		}
 
 		double* dmap = new double[20];
@@ -151,19 +147,11 @@ void Basic::ResetEnv()
 	{
 		while(true)
 		{
-			rand_x = rand()%40;
+			rand_x = rand()%60;
 			rand_y = rand()%40;
 
-			if(i < agent_num/2)
-			{
-				pos[0] = -28 + rand_x;
-				pos[1] = -18 + rand_y;
-			}
-			else
-			{
-				pos[0] = -20 + rand_x;
-				pos[1] = -20 + rand_y;
-			}
+			pos[0] = -30 + rand_x;
+			pos[1] = -20 + rand_y;
 
 			col = false;
 			int start_idx = 0;
@@ -173,7 +161,7 @@ void Basic::ResetEnv()
 			for(int j=start_idx; j<i; j++)
 			{
 				r_j = getAgent(j)->getR();
-				if(Dist(pos, getAgent(j)->getP()) < r_j * 2)
+				if(Dist(pos, getAgent(j)->getP()) < r_j * 2 + 2.0)
 				{
 					col = true;
 					break;
@@ -187,21 +175,10 @@ void Basic::ResetEnv()
 		agent = new Agent();
 		agent->setP(pos[0], pos[1]);
 		agent->setPprev(pos[0], pos[1]);
-		if(i < agent_num/2)
-		{
-			agent->setD(25.0 + rand()%4 , -18 + rand()%36);
-			agent->setQ(1.0, 0.0);
-			agent->setFront(0.0);
-			agent->setColor(0.8, 0.2, 0.2);
-		}
-		else
-		{
-			agent->setD( -20 + rand()%40, -20 + rand()%40);
-			agent->setQ(-1.0, 0.0);
-			// agent->setFront(180);
-			agent->setFront(3.14);
-			agent->setColor(0.2, 0.8, 0.2);
-		}
+		agent->setD( -30 + rand()%60, -20 + rand()%40);
+		agent->setQ(1.0, 0.0);
+		agent->setFront(0.0);
+		agent->setColor(0.9, 0.1, 0.1);
 
 		double* dmap = new double[20];
 		for(int j=0; j<20; j++){

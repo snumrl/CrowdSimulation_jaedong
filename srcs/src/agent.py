@@ -113,34 +113,34 @@ class Agent(CrowdObject):
 		glPopMatrix()
 
 		if trajectory_:
-			glLineWidth(6.0)
-			glColor3f(self.color[0],self.color[1],self.color[2])
+			glLineWidth(4.0)
+			# glColor3f(self.color[0],self.color[1],self.color[2])
 			# glColor3f(0.2, 1.0, 0.2)
-			# if idx%8==0:
-			# 	glColor3f(1.0, 0.0,0.0)
-			# elif idx%8==1:
-			# 	glColor3f(0.0, 1.0,0.0)
-			# elif idx%8==2:
-			# 	glColor3f(1.0, 1.0,0.0)
-			# elif idx%8==3:
-			# 	glColor3f(1.0, 0.0,1.0)
-			# elif idx%8==4:
-			# 	glColor3f(0.0, 1.0,1.0)
-			# elif idx%8==5:
-			# 	glColor3f(0.5, 0.5,0.0)
-			# elif idx%8==6:
-			# 	glColor3f(0.4, 0.6,0.0)
-			# elif idx%8==7:
-			# 	glColor3f(0.3, 0.7,0.0)
+			if idx%8==0:
+				glColor3f(1.0, 0.0,0.0)
+			elif idx%8==1:
+				glColor3f(0.0, 1.0,0.0)
+			elif idx%8==2:
+				glColor3f(1.0, 1.0,0.0)
+			elif idx%8==3:
+				glColor3f(1.0, 0.0,1.0)
+			elif idx%8==4:
+				glColor3f(0.0, 1.0,1.0)
+			elif idx%8==5:
+				glColor3f(0.5, 0.5,0.0)
+			elif idx%8==6:
+				glColor3f(0.4, 0.6,0.0)
+			elif idx%8==7:
+				glColor3f(0.3, 0.7,0.0)
 
 			glBegin(GL_LINES)
 			l = len(self.trajectory)
-			if l > 30:
-				for i in range(l-30, l):
-					glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 10)
-			else:
-				for i in range(l):
-					glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 10)
+			# if l > 30:
+			# 	for i in range(l-30, l):
+			# 		glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 10)
+			# else:
+			for i in range(l):
+				glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 0.5)
 			glEnd()
 
 		self.render_destination()

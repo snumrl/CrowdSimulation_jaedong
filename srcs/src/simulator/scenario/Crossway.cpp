@@ -12,52 +12,52 @@ Crossway::Crossway(int agent_n, int obs_n)
 
 	initEvaluation();
 
-	double st1[2] = {-600, 200};
+	double st1[2] = {-35, 15};
 	double p1[2] = {1.0, 0.0};
 	double n1[2] = {0.0, -1.0};
-	double l1 = 400;
+	double l1 = 20;
 	Wall* w1 = new Wall(st1, p1, l1, n1);
 
-	double st2[2] = {-600, -200};
+	double st2[2] = {-35, -15};
 	double p2[2] = {1.0, 0.0};
 	double n2[2] = {0.0, 1.0};
-	double l2 = 400;
+	double l2 = 20;
 	Wall* w2 = new Wall(st2, p2, l2, n2);
 
-	double st3[2] = {200, 200};
+	double st3[2] = {15, 15};
 	double p3[2] = {1.0, 0.0};
 	double n3[2] = {0.0, -1.0};
-	double l3 = 400;
+	double l3 = 20;
 	Wall* w3 = new Wall(st3, p3, l3, n3);
 
-	double st4[2] = {200, -200};
+	double st4[2] = {15, -15};
 	double p4[2] = {1.0, 0.0};
 	double n4[2] = {0.0, 1.0};
-	double l4 = 400;
+	double l4 = 20;
 	Wall* w4 = new Wall(st4, p4, l4, n4);
 
-	double st5[2] = {-200, 200};
+	double st5[2] = {-15, 15};
 	double p5[2] = {0.0, 1.0};
 	double n5[2] = {1.0, 0.0};
-	double l5 = 400;
+	double l5 = 20;
 	Wall* w5 = new Wall(st5, p5, l5, n5);
 
-	double st6[2] = {200, 200};
+	double st6[2] = {15, 15};
 	double p6[2] = {0.0, 1.0};
 	double n6[2] = {-1.0, 0.0};
-	double l6 = 400;
+	double l6 = 20;
 	Wall* w6 = new Wall(st6, p6, l6, n6);
 
-	double st7[2] = {-200, -200};
+	double st7[2] = {-15, -15};
 	double p7[2] = {0.0, -1.0};
 	double n7[2] = {1.0, 0.0};
-	double l7 = 400;
+	double l7 = 20;
 	Wall* w7 = new Wall(st7, p7, l7, n7);
 
-	double st8[2] = {200, -200};
+	double st8[2] = {15, -15};
 	double p8[2] = {0.0, -1.0};
 	double n8[2] = {-1.0, 0.0};
-	double l8 = 400;
+	double l8 = 20;
 	Wall* w8 = new Wall(st8, p8, l8, n8);
 
 	addWall(w1);
@@ -95,17 +95,17 @@ void Crossway::initEvaluation()
 			{
 				if(j < agent_num/2)
 				{
-					rand_x = rand()%100;
-					rand_y = rand()%200;
-					pos[0] = -300 + rand_x;
-					pos[1] = -100 + rand_y;
+					rand_x = rand()%5;
+					rand_y = rand()%28;
+					pos[0] = -30 + rand_x;
+					pos[1] = -14 + rand_y;
 				}
 				else
 				{
-					rand_x = rand()%200;
-					rand_y = rand()%100;
-					pos[0] = -100 + rand_x;
-					pos[1] = -300 + rand_y;
+					rand_x = rand()%28;
+					rand_y = rand()%5;
+					pos[0] = -14 + rand_x;
+					pos[1] = -30 + rand_y;
 				}
 
 				col = false;
@@ -118,7 +118,7 @@ void Crossway::initEvaluation()
 					double p[2];
 					p[0] = eval_agent_p_x.at(k);
 					p[1] = eval_agent_p_y.at(k);
-					if(Dist(pos, p) < 20)
+					if(Dist(pos, p) < 1.0)
 					{
 						col = true;
 						break;
@@ -133,13 +133,13 @@ void Crossway::initEvaluation()
 			eval_agent_p_y.push_back(pos[1]);
 			if(j < agent_num/2)
 			{
-				eval_agent_d_x.push_back(250);
+				eval_agent_d_x.push_back(25);
 				eval_agent_d_y.push_back(pos[1]);
 			}
 			else
 			{
 				eval_agent_d_x.push_back(pos[0]);
-				eval_agent_d_y.push_back(250);
+				eval_agent_d_y.push_back(25);
 			}
 		}
 	}
@@ -177,8 +177,8 @@ void Crossway::ResetEval(int idx)
 		}
 		else
 		{
-			agent->setQ(-1.0, 0.0);
-			agent->setFront(180.0);
+			agent->setQ(0.0, 1.0);
+			agent->setFront(3.141592/2);
 		}
 
 		double* dmap = new double[20];
@@ -218,18 +218,18 @@ void Crossway::ResetEnv()
 	{
 		while(true)
 		{
-			rand_x = rand()%200;
-			rand_y = rand()%200;
+			rand_x = rand()%5;
+			rand_y = rand()%28;
 
 			if(i < agent_num/2)
 			{
-				pos[0] = -500 + rand_x;
-				pos[1] = -100 + rand_y;
+				pos[0] = -30 + rand_x;
+				pos[1] = -14 + rand_y;
 			}
 			else
 			{
-				pos[0] = -100 + rand_y;
-				pos[1] = -300 + rand_x;
+				pos[0] = -14 + rand_y;
+				pos[1] = -30 + rand_x;
 			}
 
 			col = false;
@@ -240,7 +240,7 @@ void Crossway::ResetEnv()
 			for(int j=start_idx; j<i; j++)
 			{
 				r_j = getAgent(j)->getR();
-				if(Dist(pos, getAgent(j)->getP()) < r_j * 2)
+				if(Dist(pos, getAgent(j)->getP()) < r_j * 2 + 0.8)
 				{
 					col = true;
 					break;
@@ -256,17 +256,20 @@ void Crossway::ResetEnv()
 		agent->setPprev(pos[0], pos[1]);
 		if(i < agent_num/2)
 		{
-			agent->setD(600.0, -100 + rand()%200);
+			if(i==0)
+				agent->setD(23, pos[1]);
+			else
+				agent->setD(25.0, pos[1]);
 			agent->setQ(1.0, 0.0);
 			agent->setFront(0.0);
-			agent->setColor(0.8, 0.2, 0.2);
+			agent->setColor(0.9, 0.1, 0.1);
 		}
 		else
 		{
-			agent->setD(pos[0], 600);
+			agent->setD(pos[0], 25);
 			agent->setQ(0.0, 1.0);
-			agent->setFront(90.0);
-			agent->setColor(0.2, 0.8, 0.2);
+			agent->setFront(3.141592/2);
+			agent->setColor(0.1, 0.9, 0.1);
 		}
 
 		double* dmap = new double[20];

@@ -18,7 +18,7 @@ class Env{
 		int obstacle_num;
 
 		int _cur_step = 0;
-		int _max_step = 200;
+		int _max_step = 400;
 		int _vision_depth = 30;
 
 		double _reward;

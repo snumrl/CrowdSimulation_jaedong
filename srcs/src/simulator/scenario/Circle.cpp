@@ -7,7 +7,7 @@
 using namespace std;
 
 #define PI 3.14159265
-#define Radius 300.0
+#define Radius 15.0
 
 Circle::Circle(int agent_n, int obs_n)
 {
@@ -77,7 +77,7 @@ void Circle::ResetEval(int idx)
 		vec_divide_scalar(dir, dir_len, dir);
 
 		agent->setQ(dir[0], dir[1]);
-		agent->setFront(CoorToAngle(dir));
+		agent->setFront(CoorToRadian(dir));
 
 		double* dmap = new double[20];
 		for(int j=0; j<20; j++){
@@ -113,6 +113,10 @@ void Circle::ResetEnv()
 	for(int i=rand_idx; i<rand_idx + agent_num; i++)
 	{
 		agent = new Agent(); // p q d
+		// agent->setP(Radius*cos( i * angle * PI / 180.0)-1+rand()%2, Radius*sin( i * angle * PI / 180.0)-1+rand()%2);
+		// agent->setPprev(Radius*cos( i * angle * PI / 180.0), Radius*sin( i * angle * PI / 180.0));
+		// agent->setD(Radius*cos((i * angle+180.0) * PI / 180.0)-1+rand()%2, Radius*sin((i * angle+180.0) * PI / 180.0)-1+rand()%2);
+
 		agent->setP(Radius*cos( i * angle * PI / 180.0), Radius*sin( i * angle * PI / 180.0));
 		agent->setPprev(Radius*cos( i * angle * PI / 180.0), Radius*sin( i * angle * PI / 180.0));
 		agent->setD(Radius*cos((i * angle+180.0) * PI / 180.0), Radius*sin((i * angle+180.0) * PI / 180.0));
@@ -125,7 +129,7 @@ void Circle::ResetEnv()
 
 		agent->setQ(dir[0], dir[1]);
 		agent->setFront(CoorToAngle(dir));
-		agent->setColor(0.8, 0.2, 0.2);
+		agent->setColor(0.9, 0.1, 0.1);
 
 		double* dmap = new double[20];
 		for(int j=0; j<20; j++){

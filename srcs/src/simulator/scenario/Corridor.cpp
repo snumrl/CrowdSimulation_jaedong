@@ -12,28 +12,16 @@ Corridor::Corridor(int agent_n, int obs_n)
 
 	initEvaluation();
 
-	// double st1[2] = {-600, 65};
-	// double p1[2] = {1.0, 0.0};
-	// double n1[2] = {0.0, -1.0};
-	// double l1 = 1200;
-	// Wall* w1 = new Wall(st1, p1, l1, n1);
-
-	// double st2[2] = {-600, -65};
-	// double p2[2] = {1.0, 0.0};
-	// double n2[2] = {0.0, 1.0};
-	// double l2 = 1200;
-	// Wall* w2 = new Wall(st2, p2, l2, n2);
-
-	double st1[2] = {-30, 8};
+	double st1[2] = {-35, 10};
 	double p1[2] = {1.0, 0.0};
 	double n1[2] = {0.0, -1.0};
-	double l1 = 60;
+	double l1 = 70;
 	Wall* w1 = new Wall(st1, p1, l1, n1);
 
-	double st2[2] = {-30, -8};
+	double st2[2] = {-35, -10};
 	double p2[2] = {1.0, 0.0};
 	double n2[2] = {0.0, 1.0};
-	double l2 = 60;
+	double l2 = 70;
 	Wall* w2 = new Wall(st2, p2, l2, n2);
 
 	addWall(w1);
@@ -67,20 +55,19 @@ void Corridor::initEvaluation()
 		{
 			while(true)
 			{
-				rand_x = rand()%3;
-				rand_y = rand()%14;
+				rand_x = rand()%5;
+				rand_y = rand()%18;
 
 				if(i < agent_num/2)
 				{
-					pos[0] = -15 + rand_x;
-					pos[1] = -7 + rand_y;
+					pos[0] = -30 + rand_x;
+					pos[1] = -9 + rand_y;
 				}
 				else
 				{
-					pos[0] = 12 + rand_x;
-					pos[1] = -7 + rand_y;
+					pos[0] = 25 + rand_x;
+					pos[1] = -9 + rand_y;
 				}
-
 
 				col = false;
 				int start_idx = 0;
@@ -108,23 +95,23 @@ void Corridor::initEvaluation()
 
 			if(j < agent_num/2)
 			{
-				eval_agent_d_x.push_back(15);
-				eval_agent_d_y.push_back(pos[1]);
+				eval_agent_d_x.push_back(25);
+				eval_agent_d_y.push_back(-9+rand()%18);
 			}
 			else
 			{
-				eval_agent_d_x.push_back(-15);
-				eval_agent_d_y.push_back(pos[1]);
+				eval_agent_d_x.push_back(-25);
+				eval_agent_d_y.push_back(-9+rand()%18);
 			}
 		}
 
 		for(int j=0; j<obstacle_num; j++)
 		{
 			rand_x = rand()%40;
-			rand_y = rand()%20;
+			rand_y = rand()%18;
 
 			eval_obs_p_x.push_back(-20 + rand_x);
-			eval_obs_p_y.push_back(-10 + rand_y);
+			eval_obs_p_y.push_back(-9 + rand_y);
 		}
 	}
 }
@@ -154,7 +141,6 @@ void Corridor::ResetEval(int idx)
 		agent->setPprev(eval_agent_p_x.at(idx*agent_num + i), eval_agent_p_y.at(idx*agent_num + i));
 		agent->setD(eval_agent_d_x.at(idx*agent_num + i), eval_agent_d_y.at(idx*agent_num + i));
 
-		// if(i < agent_num)
 		if(i < agent_num/2)
 		{
 			agent->setQ(1.0, 0.0);
@@ -163,7 +149,6 @@ void Corridor::ResetEval(int idx)
 		else
 		{
 			agent->setQ(-1.0, 0.0);
-			// agent->setFront(180.0);
 			agent->setFront(3.14);
 		}
 
@@ -187,7 +172,6 @@ void Corridor::ResetEval(int idx)
 	{
 		Obstacle* obs = new Obstacle(); // p q d
 		obs->setP(eval_obs_p_x.at(idx*obstacle_num + i), eval_obs_p_y.at(idx*obstacle_num + i));
-
 		addObstacle(obs);
 	}
 
@@ -198,12 +182,10 @@ void Corridor::ResetEnv()
 {
 	for(vector< Agent* >::iterator it = _agents.begin() ; it != _agents.end(); it++)
 		delete (*it);
-
 	_agents.clear();
 
 	for(vector< Obstacle* >::iterator it = _obstacles.begin() ; it != _obstacles.end(); it++)
 		delete (*it);
-
 	_obstacles.clear();
 
 	srand((unsigned int)time(0));
@@ -212,9 +194,9 @@ void Corridor::ResetEnv()
 	{
 		int rand_x, rand_y;
 		rand_x = rand()%40;
-		rand_y = rand()%14;
+		rand_y = rand()%18;
 		Obstacle* obs = new Obstacle(); // p q d
-		obs->setP(-20.0 + rand_x, -7.0 + rand_y);
+		obs->setP(-20.0 + rand_x, -9.0 + rand_y);
 
 		addObstacle(obs);
 	}
@@ -229,18 +211,18 @@ void Corridor::ResetEnv()
 	{
 		while(true)
 		{
-			rand_x = rand()%3;
-			rand_y = rand()%14;
+			rand_x = rand()%5;
+			rand_y = rand()%18;
 
 			if(i < agent_num/2)
 			{
-				pos[0] = -15 + rand_x;
-				pos[1] = -7 + rand_y;
+				pos[0] = -30 + rand_x;
+				pos[1] = -9 + rand_y;
 			}
 			else
 			{
-				pos[0] = 12 + rand_x;
-				pos[1] = -7 + rand_y;
+				pos[0] = 25 + rand_x;
+				pos[1] = -9 + rand_y;
 			}
 
 			col = false;
@@ -251,21 +233,12 @@ void Corridor::ResetEnv()
 			for(int j=start_idx; j<i; j++)
 			{
 				r_j = getAgent(j)->getR();
-				if(Dist(pos, getAgent(j)->getP()) < r_j * 2 + 0.1)
+				if(Dist(pos, getAgent(j)->getP()) < r_j * 2 + 0.8)
 				{
 					col = true;
 					break;
 				}
 			}
-
-			// for(int j=0; j<obstacle_num; j++)
-			// {
-			// 	if(Dist(pos, getObstacle(j)->getP()) < r_j * 2 + 0.1)
-			// 	{
-			// 		col = true;
-			// 		break;
-			// 	}
-			// }
 
 			if(col == false)
 				break;
@@ -276,20 +249,20 @@ void Corridor::ResetEnv()
 		agent->setPprev(pos[0], pos[1]);
 		if(i < agent_num/2)
 		{
-			agent->setD(25.0, -7 + rand()%14);
-			// agent->setD(400.0, pos[1]);
+			if(i==0)
+				agent->setD(23.0, -9+rand()%18);
+			else
+				agent->setD(25.0, -9+rand()%18);
 			agent->setQ(1.0, 0.0);
 			agent->setFront(0.0);
-			agent->setColor(0.8, 0.2, 0.2);
+			agent->setColor(0.9, 0.1, 0.1);
 		}
 		else
 		{
-			agent->setD(-25.0, -7 + rand()%14);
-			// agent->setD(-400.0, pos[1]);
+			agent->setD(-25.0, -9+rand()%18);
 			agent->setQ(-1.0, 0.0);
-			// agent->setFront(180.0);
 			agent->setFront(3.14);
-			agent->setColor(0.2, 0.8, 0.2);
+			agent->setColor(0.1, 0.9, 0.1);
 		}
 
 		// if(i < agent_num/2)
@@ -335,8 +308,6 @@ void Corridor::ResetEnv()
 
 		addAgent(agent);
 	}
-
-
 
 	_cur_step = 0;
 }

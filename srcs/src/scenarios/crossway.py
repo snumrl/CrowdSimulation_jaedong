@@ -15,6 +15,7 @@ import math
 
 class Crossway:
 	def __init__(self, obs):
+		self.name = 'Crossway'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
 		self.init_walls();
@@ -45,14 +46,6 @@ class Crossway:
 
 	def init_walls(self):
 		self.walls = []
-		self.walls.append(Wall([-600, -250], [1, 0], 350))
-		self.walls.append(Wall([-600, 250], [1, 0], 350))
-		self.walls.append(Wall([250, -250], [1, 0], 350))
-		self.walls.append(Wall([250, 250], [1, 0], 350))
-		self.walls.append(Wall([-250, -250], [0, -1], 350))
-		self.walls.append(Wall([-250, 250], [0, 1], 350))
-		self.walls.append(Wall([250, -250], [0, -1], 350))
-		self.walls.append(Wall([250, 250], [0, 1], 350))
 
 	def init_record(self):
 		self.record_buffer_p = Queue.Queue(maxsize=5000)
@@ -88,32 +81,6 @@ class Crossway:
 
 		for i in range(len(self.walls)):
 			self.walls[i].render()
-
-		glColor3f(0.3, 0.3, 0.3)
-		glPushMatrix()
-		glTranslatef(-500, 300, 20)
-		glScalef(600, 160, 40)
-		glutSolidCube(1.0)
-		glPopMatrix()
-
-		glPushMatrix()
-		glTranslatef(-500, -280, 20)
-		glScalef(600, 160, 40)
-		glutSolidCube(1.0)
-		glPopMatrix()
-
-		glPushMatrix()
-		glTranslatef(500, 280, 20)
-		glScalef(600, 160, 40)
-		glutSolidCube(1.0)
-		glPopMatrix()
-
-		glPushMatrix()
-		glTranslatef(500, -280, 20)
-		glScalef(600, 160, 40)
-		glutSolidCube(1.0)
-		glPopMatrix()
-
 
 	def record(self, flag=False):
 		if flag:

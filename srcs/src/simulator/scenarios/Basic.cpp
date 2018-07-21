@@ -11,7 +11,14 @@ Basic::Basic(int agent_n, int obs_n)
 	obstacle_num = obs_n;
 
 	initEvaluation();
+	initWalls();
+
 	Reset(-1);
+}
+
+void Basic::initWalls()
+{
+	wall_num = 0;
 }
 
 Basic::~Basic()
@@ -29,7 +36,6 @@ void Basic::initEvaluation()
 {
 	srand((unsigned int)time(0));
 
-	int eval_set_num = 4;
 	int rand_x, rand_y;
 	for(int i=0; i<eval_set_num; i++)
 	{
@@ -211,14 +217,6 @@ void Basic::ResetEnv()
 	_cur_step = 0;
 }
 
-void Basic::Render()
-{
-	for(int i=0; i<agent_num; i++)
-		getAgent(i)->Render();
-
-	for(int i=0; i<obstacle_num; i++)
-		getObstacle(i)->Render();
-}
 
 
 

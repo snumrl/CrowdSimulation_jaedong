@@ -13,11 +13,12 @@ import Queue
 import copy
 import math
 
-class Circle:
+class Mix:
 	def __init__(self, obs):
+		self.name = 'Mix'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
-		self.init_walls()
+		self.init_walls();
 		self.init_record()
 
 	def init_agents(self, agent_obs):
@@ -45,8 +46,6 @@ class Circle:
 
 	def init_walls(self):
 		self.walls = []
-		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, -200], [1, 0], cst.WINDOW_WIDTH))
-		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, 200], [1, 0], cst.WINDOW_WIDTH))
 
 	def init_record(self):
 		self.record_buffer_p = Queue.Queue(maxsize=5000)
@@ -68,8 +67,6 @@ class Circle:
 			self.agents[i].setColor(agent_data[i]['color'])
 			self.agents[i].trajectory.append(agent_data[i]['p'])
 
-		# print "traj : ", self.agents[0].trajectory
-
 		obs_data = obs['obstacle']
 		for i in range(self.obstacle_count):
 			self.obstacles[i].setP(obs_data[i]['p'])
@@ -82,8 +79,31 @@ class Circle:
 		for i in range(1, self.agent_count):
 			self.agents[i].render(False, trajectory, i)
 
-		for i in range(len(self.walls)):
-			self.walls[i].render()
+		glColor3f(0.2, 0.2, 0.25)
+
+		glPushMatrix()
+		glTranslatef(-22.5, 17.5, 0.5)
+		glScalef(15, 5.0, 1.0)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(-22.5, -17.5, 0.5)
+		glScalef(15, 5.0, 1.0)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(22.5, -17.5, 0.5)
+		glScalef(15, 5.0, 1.0)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(22.5, 17.5, 0.5)
+		glScalef(15, 5.0, 1.0)
+		glutSolidCube(1.0)
+		glPopMatrix()
 
 	def record(self, flag=False):
 		if flag:

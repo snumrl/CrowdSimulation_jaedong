@@ -15,6 +15,7 @@ Circle::Circle(int agent_n, int obs_n)
 	obstacle_num = obs_n;
 
 	initEvaluation();
+	initWalls();
 
 	Reset(-1);
 }
@@ -28,10 +29,13 @@ Circle::~Circle()
 	_agents.clear();
 }
 
+void Circle::initWalls()
+{
+	wall_num = 0;
+}
+
 void Circle::initEvaluation()
 {
-	int eval_set_num = 4;
-
 	srand((unsigned int)time(0));
 
 	double angle = 360.0/(double)agent_num;
@@ -128,7 +132,7 @@ void Circle::ResetEnv()
 		vec_divide_scalar(dir, dir_len, dir);
 
 		agent->setQ(dir[0], dir[1]);
-		agent->setFront(CoorToAngle(dir));
+		agent->setFront(CoorToRadian(dir));
 		agent->setColor(0.9, 0.1, 0.1);
 
 		double* dmap = new double[20];
@@ -150,13 +154,6 @@ void Circle::ResetEnv()
 	_cur_step = 0;
 }
 
-void Circle::Render()
-{
-	for(int i=0; i<agent_num; i++)
-	{
-		getAgent(i)->Render();
-	}
-}
 
 
 

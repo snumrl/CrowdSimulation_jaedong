@@ -7,6 +7,10 @@
 using namespace std;
 
 #define PI 3.141592
+#define w_v -4.0
+#define w_w -1.0
+#define w_col -3.0
+#define w_target -4.0
 
 Env::Env()
 {
@@ -24,7 +28,6 @@ const vector<Agent*> & Env::Observe()
 	for(int i=0; i<agent_num; i++)
 	{
 		Agent* cur_agent;
-
 		cur_agent = _agents.at(i);
 		double* d_map = cur_agent->getDmap();
 		double* v_map = cur_agent->getVmap();
@@ -39,7 +42,6 @@ const vector<Agent*> & Env::Observe()
 			tmp_map[0] = _vision_depth;
 			tmp_map[1] = 0.0;
 			tmp_map[2] = 0.0;
-			// AngleToCoor(cur_agent->getFront() + cur_agent->getFov()/2 - j*cur_agent->getInterval(), angle_v);
 			cur_radian = cur_agent->getFront() + (cur_agent->getFov()/2 - j*cur_agent->getInterval())/180.0*PI;
 			RadianToCoor(cur_radian, angle_v);
 			depth_by_agents(angle_v, cur_agent, tmp_map, i);
@@ -49,6 +51,7 @@ const vector<Agent*> & Env::Observe()
 			d_map[j] = tmp_map[0];
 			v_map[2*j] = tmp_map[1];
 			v_map[2*j+1] = tmp_map[2];
+
 		}
 	}
 
@@ -136,7 +139,6 @@ void Env::depth_by_walls(double* angle, Agent* agent, double* _map, int idx)
 	Wall* cur_wall;
 	double offset[2];
 	double* agent_pos = agent->getP();
-	int wall_num = _walls.size();
 	for(int i=0; i<wall_num; i++)
 	{
 		cur_wall = _walls.at(i);
@@ -234,8 +236,6 @@ void Env::Update()
 	double cur_w = _agents.at(0)->getV();
 	double smooth_v = 0.0;
 	double smooth_w = 0.0;
-	double w_v = -4.0;
-	double w_w = -2.0;
 
 	if(cur_v > 0.6)
 		smooth_v = w_v * (cur_v - 0.6) * (cur_v - 0.6);
@@ -245,12 +245,8 @@ void Env::Update()
 		smooth_w = w_w * (cur_w - 0.1) * (cur_w - 0.1);
 	if(cur_w < -0.1)
 		smooth_w = w_w * (cur_w + 0.1) * (cur_w + 0.1);
-	// smooth_w = w_w * (cur_w) * (cur_w);
 
 	double score_smooth = smooth_v + smooth_w;
-	// cout << "smooth v : " << smooth_v << endl;
-	// cout << "smooth w : " << smooth_w << endl;
-	// cout << "smooth : " << score_smooth << endl;
 
 	_agents.at(0)->setCol(false);
 	for(int i=0; i<agent_num; i++)
@@ -285,7 +281,7 @@ void Env::Update()
 			cur_obs = _obstacles.at(j);
 
 			double d = Dist(cur_agent->getP(), cur_obs->getP());
-			double r = cur_agent->getR() + cur_obs->getR() + 0.1;
+			double r = cur_agent->getR() + cur_obs->getR();
 			if(d < r)
 			{
 				isCol = true;
@@ -315,19 +311,13 @@ void Env::Update()
 	double score_target = next_score - prev_score;
 
 	double score = score_target + score_smooth;
-	// cout << "target : " << score_target << endl;
-	// cout << "score : " << score << endl;
 
 	if(_agents.at(0)->getCol())
-		score = -3.0;
+		score = w_col;
 
 	_reward = score;
 
 	_cur_step += 1;
-	// if(cur_v * 1.25 + 0.75 >  1.5)
-	// 	cout << "v : " << cur_v * 1.25 + 0.75 << endl;
-	// if(cur_w < 0.1 && cur_w > -0.1)
-	// 	cout << "w : " << cur_w * 1.5 << endl;
 }
 
 void Env::setAction(int i, double t, double v, bool s)
@@ -337,28 +327,28 @@ void Env::setAction(int i, double t, double v, bool s)
 
 bool Env::isTerm(bool isTest)
 {
-	if(isTest)
-		return false;
-
-	// if(_agents.at(0)->getCol())
-	// 	return true;
+	if(!isTest && _agents.at(0)->getCol())
+		return true;
 
 	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 3.0)
 		return true;
 
-	// if(_agents.at(0)->getP()[0] >= _agents.at(0)->getD()[0])
+	// if(_agents.at(0)->getP()[0] < -30)
 	// 	return true;
 
-	if(_agents.at(0)->getP()[0] < -30)
-		return true;
-
-	if(_agents.at(0)->getP()[0] > 30)
-		return true;
+	// if(_agents.at(0)->getP()[0] > 30)
+	// 	return true;
 
 	if(_cur_step > _max_step)
 		return true;
 
 	return false;
+}
+
+bool Env::isCol()
+{
+	if(_agents.at(0)->getCol())
+		return true;
 }
 
 double Env::getReward()
@@ -372,7 +362,7 @@ double Env::getScore()
 	double d_square = pow(d,2);
 
 	// return -0.001*d_square;
-	return -10.0*d;
+	return w_target * d;
 }
 
 void Env::addAgent(Agent* agent)

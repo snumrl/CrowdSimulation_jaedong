@@ -13,11 +13,12 @@ import Queue
 import copy
 import math
 
-class Basic:
+class Bottleneck:
 	def __init__(self, obs):
+		self.name = 'Bottleneck'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
-		self.init_walls()
+		self.init_walls();
 		self.init_record()
 
 	def init_agents(self, agent_obs):
@@ -45,8 +46,12 @@ class Basic:
 
 	def init_walls(self):
 		self.walls = []
-		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, -200], [1, 0], cst.WINDOW_WIDTH))
-		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, 200], [1, 0], cst.WINDOW_WIDTH))
+		self.walls.append(Wall([-600, 200], [1, 0], 600))
+		self.walls.append(Wall([-600, -200], [1, 0], 600))
+		self.walls.append(Wall([0, 80], [0, 1], 120))
+		self.walls.append(Wall([0, -80], [0, -1], 120))
+		self.walls.append(Wall([0, 80], [1, 0], 600))
+		self.walls.append(Wall([0, -80], [1, 0], 600))
 
 	def init_record(self):
 		self.record_buffer_p = Queue.Queue(maxsize=5000)

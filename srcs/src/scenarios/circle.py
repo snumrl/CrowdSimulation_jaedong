@@ -13,11 +13,12 @@ import Queue
 import copy
 import math
 
-class Bottleneck:
+class Circle:
 	def __init__(self, obs):
+		self.name = 'Circle'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
-		self.init_walls();
+		self.init_walls()
 		self.init_record()
 
 	def init_agents(self, agent_obs):
@@ -45,12 +46,8 @@ class Bottleneck:
 
 	def init_walls(self):
 		self.walls = []
-		self.walls.append(Wall([-600, 200], [1, 0], 600))
-		self.walls.append(Wall([-600, -200], [1, 0], 600))
-		self.walls.append(Wall([0, 80], [0, 1], 120))
-		self.walls.append(Wall([0, -80], [0, -1], 120))
-		self.walls.append(Wall([0, 80], [1, 0], 600))
-		self.walls.append(Wall([0, -80], [1, 0], 600))
+		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, -200], [1, 0], cst.WINDOW_WIDTH))
+		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, 200], [1, 0], cst.WINDOW_WIDTH))
 
 	def init_record(self):
 		self.record_buffer_p = Queue.Queue(maxsize=5000)
@@ -70,6 +67,9 @@ class Bottleneck:
 			self.agents[i].setFront(agent_data[i]['front'])
 			self.agents[i].setDmap(agent_data[i]['d_map'])
 			self.agents[i].setColor(agent_data[i]['color'])
+			self.agents[i].trajectory.append(agent_data[i]['p'])
+
+		# print "traj : ", self.agents[0].trajectory
 
 		obs_data = obs['obstacle']
 		for i in range(self.obstacle_count):

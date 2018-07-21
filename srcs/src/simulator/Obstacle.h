@@ -12,8 +12,6 @@ class Obstacle{
 		Obstacle();
 		~Obstacle();
 
-		void Render();
-
 		void setP(double x, double y) {_p[0] = x; _p[1] = y;};
 		void setR(double r) {_r = r;};
 		void setId (int id) {_id = id;}

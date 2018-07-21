@@ -15,10 +15,10 @@ class Parser{
 		Env* _env;
 
 	public:
-		Parser(string scenario);
+		Parser(string scenario, int a, int o);
 		~Parser();
 
-		void Reset(int idx);
+		void Reset(int idx, int a, int o);
 		dict Step(list action, bool isTest);
 		dict Observe();
 		list dmap_to_list(double* d);

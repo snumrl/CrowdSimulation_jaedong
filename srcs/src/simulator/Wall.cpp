@@ -42,15 +42,3 @@ Wall::~Wall()
 {
 }
 
-void Wall::Render()
-{
-	glColor3f(0.4, 0.4, 0.4);
-
-	glPushMatrix();
-	glBegin(GL_LINES);
-	glVertex3f(_st[0], _st[1], 0);
-	glVertex3f(_ed[0], _ed[1], 0);
-	glEnd();
-	glPopMatrix();
-}
-

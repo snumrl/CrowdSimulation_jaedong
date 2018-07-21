@@ -11,7 +11,13 @@ Bottleneck::Bottleneck(int agent_n, int obs_n)
 	obstacle_num = obs_n;
 
 	initEvaluation();
+	initWalls();
 
+	Reset(-1);
+}
+
+void Bottleneck::initWalls()
+{
 	double st1[2] = {-600, 200};
 	double p1[2] = {1.0, 0.0};
 	double n1[2] = {0.0, -1.0};
@@ -22,40 +28,34 @@ Bottleneck::Bottleneck(int agent_n, int obs_n)
 	double p2[2] = {0.0, 1.0};
 	double n2[2] = {-1.0, 0.0};
 	double l2 = 120;
-	Wall* w2 = new Wall(st2, p2, l2, n2);
+	addWall(new Wall(st2, p2, l2, n2));
 
 	double st3[2] = {-600, -200};
 	double p3[2] = {1.0, 0.0};
 	double n3[2] = {0.0, 1.0};
 	double l3 = 600;
-	Wall* w3 = new Wall(st3, p3, l3, n3);
+	addWall(new Wall(st3, p3, l3, n3));
 
 	double st4[2] = {0, -80};
 	double p4[2] = {0.0, -1.0};
 	double n4[2] = {-1.0, 0.0};
 	double l4 = 120;
-	Wall* w4 = new Wall(st4, p4, l4, n4);
+	addWall(new Wall(st4, p4, l4, n4));
 
 	double st5[2] = {0, 80};
 	double p5[2] = {1.0, 0.0};
 	double n5[2] = {0.0, -1.0};
 	double l5 = 600;
-	Wall* w5 = new Wall(st5, p5, l5, n5);
+	addWall(new Wall(st5, p5, l5, n5));
 
 	double st6[2] = {0, -80};
 	double p6[2] = {1.0, 0.0};
 	double n6[2] = {0.0, 1.0};
 	double l6 = 600;
-	Wall* w6 = new Wall(st6, p6, l6, n6);
+	addWall(new Wall(st6, p6, l6, n6));
 
-	addWall(w1);
-	addWall(w2);
-	addWall(w3);
-	addWall(w4);
-	addWall(w5);
-	addWall(w6);
+	wall_num = _walls.size();
 
-	Reset(-1);
 }
 
 Bottleneck::~Bottleneck()
@@ -73,7 +73,6 @@ void Bottleneck::initEvaluation()
 {
 	srand((unsigned int)time(0));
 
-	int eval_set_num = 4;
 	int rand_x, rand_y;
 	double pos[2];
 	bool col =false;
@@ -230,12 +229,5 @@ void Bottleneck::ResetEnv()
 
 	_cur_step = 0;
 }
-
-void Bottleneck::Render()
-{
-	for(int i=0; i<agent_num; i++)
-		getAgent(i)->Render();
-}
-
 
 

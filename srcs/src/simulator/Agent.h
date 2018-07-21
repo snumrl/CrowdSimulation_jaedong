@@ -30,7 +30,6 @@ class Agent{
 		~Agent();
 
 		void Update(double* p);
-		void Render();
 
 		void setAction(double delta_t, double delta_v, bool isStop);
 		void Action();

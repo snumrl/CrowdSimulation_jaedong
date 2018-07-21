@@ -2,21 +2,25 @@
 #include <vector>
 
 #include "parser.h"
-#include "scenario/Basic.h"
-#include "scenario/Corridor.h"
-#include "scenario/Crossway.h"
-#include "scenario/Circle.h"
-#include "scenario/Bottleneck.h"
+#include "scenarios/Basic.h"
+#include "scenarios/Corridor.h"
+#include "scenarios/Crossway.h"
+#include "scenarios/Circle.h"
+#include "scenarios/Bottleneck.h"
+#include "scenarios/Mix.h"
 
 using namespace boost::python;
 using namespace std;
 
-#define AGENT_NUM 1
-#define OBSTACLE_NUM 20
+int AGENT_NUM = 0;
+int OBSTACLE_NUM = 0;
 
-Parser::Parser(string Scenario)
+Parser::Parser(string Scenario, int a, int o)
 {
 	cout << "Scenario : " << Scenario << endl;
+
+	AGENT_NUM = a;
+	OBSTACLE_NUM = o;
 
 	if(Scenario.compare("Basic") == 0){
 		_env = new Basic(AGENT_NUM, OBSTACLE_NUM);
@@ -33,6 +37,9 @@ Parser::Parser(string Scenario)
 	else if(Scenario.compare("Bottleneck") == 0){
 		_env = new Bottleneck(AGENT_NUM, OBSTACLE_NUM);
 	}
+	else if(Scenario.compare("Mix") == 0){
+		_env = new Mix(AGENT_NUM, OBSTACLE_NUM);
+	}
 }
 
 Parser::~Parser()
@@ -42,7 +49,7 @@ Parser::~Parser()
 	delete _env;
 }
 
-void Parser::Reset(int idx)
+void Parser::Reset(int idx,  int a, int o)
 {
 	_env -> Reset(idx);
 }
@@ -62,6 +69,7 @@ dict Parser::Step(list action, bool isTest)
 	dict memory;
 	memory["obs"] = Observe();
 	memory["isTerm"] = _env->isTerm(isTest);
+	memory["isCol"] = _env->isCol();
 	memory["reward"] = _env->getReward();
 
 	return memory;
@@ -150,7 +158,6 @@ dict Parser::Observe()
 
 		obstacle_state.append(cur_obstacle_state);
 	}
-
 	obs["agent"] = agent_state;
 	obs["obstacle"] = obstacle_state;
 
@@ -170,7 +177,7 @@ list Parser::dmap_to_list(double* d)
 
 BOOST_PYTHON_MODULE(csim)
 {
-	class_<Parser>("Parser", init<std::string>())
+	class_<Parser>("Parser", init<std::string, int, int>())
 		.def("Reset", &Parser::Reset)
 		.def("Step", &Parser::Step)
 		.def("Observe", &Parser::Observe);

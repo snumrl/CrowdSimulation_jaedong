@@ -1,57 +1,83 @@
 import sys
 sys.path.append('../base')
+sys.path.append('scenarios')
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
+import os
 import csim
 import numpy as np
 import math
 import copy
+import matplotlib.pyplot as plt
+from time import localtime, strftime
 from constants import Constants as cst
 from ddpg import DDPG
+from mix import Mix
 from basic import Basic
-from corridor import Corridor
 from circle import Circle
+from corridor import Corridor
 from crossway import Crossway
 from bottleneck import Bottleneck
 
-FLAG_USE_RECENT_CKPT = True
-FLAG_USE_REPLAY_MEMORY = False
-FLAG_WARMUP_FOR_TRAINING = False
+FLAG_REPLAY_LOAD = False
+FLAG_CKPT_LOAD = True
+FLAG_EVAL_LOAD = False
+FLAG_EVAL_SAVE = False
+FLAG_WARMUP = False
+
+# SCENARIO = 'Basic'
+# SCENARIO = 'Corridor'
+# SCENARIO = 'Bottleneck'
+# SCENARIO = 'Crossway'
+# SCENARIO = 'Circle'
+SCENARIO = 'Mix'
+
+AGENT_NUM = 60
+OBSTACLE_NUM = 0
+
+actor_dir = "../data/ckpt/actor/tmp/"
+critic_dir = "../data/ckpt/critic/tmp/"
 
 class Experiment:
-	def __init__(self, WIDTH=1200, HEIGHT=800):
+	def __init__(self, WIDTH=1280, HEIGHT=720):
 		self.WIDTH = WIDTH
 		self.HEIGHT = HEIGHT
 		self.initGL()
 		self.initFlag()
 
-		# SCENARIO = 'Basic'
-		SCENARIO = 'Corridor'
-		# SCENARIO = 'Bottleneck'
-		# SCENARIO = 'Crossway'
-		# SCENARIO = 'Circle'
-
-		self.scen = SCENARIO
+		self.SCENARIO = SCENARIO
+		self.AGENT_NUM = AGENT_NUM
+		self.OBSTACLE_NUM = OBSTACLE_NUM
 
 		self.setEnvironment(SCENARIO)
 		self.setNetwork()
 
-		if FLAG_USE_RECENT_CKPT:
-			print "Load Network"
-			self.load_network(m_replay = FLAG_USE_REPLAY_MEMORY)
+		self.isTerm = False
+		self.eval_flag = False
+		self.fps = 120
+		self.eval_iter = 0
+		self.train_iter = 0
+		self.episode_iter = 0
+		self.eval_col = []
+		self.eval_end = []
+
+		self.actor_dir = actor_dir
+		self.critic_dir = critic_dir
+
+		if FLAG_CKPT_LOAD:
+			self.load_network()
 		else:
 			print "New Network"
 
-		if FLAG_WARMUP_FOR_TRAINING:
-			self.WarmUp()
+		if FLAG_EVAL_SAVE:
+			os.makedirs(actor_dir)
+			os.makedirs(critic_dir)
 
-		self.isTerm = False
-		self.train_iter = 0
-		self.episode_iter = 0
-		self.fps = 120
+		if FLAG_WARMUP:
+			self.WarmUp()
 
 		self.timer_func()
 		glutMainLoop()
@@ -69,28 +95,31 @@ class Experiment:
 
 	def initFlag(self):
 		self.flag={}
+		self.flag['plot'] = False
 		self.flag['quit'] = False
+		self.flag['step'] = False
 		self.flag['play'] = False
 		self.flag['train'] = False
-		self.flag['greedy'] = False
-		self.flag['step'] = False
-		self.flag['weight'] = False
 		self.flag['depth'] = False
 		self.flag['record'] = False
 		self.flag['replay'] = False
+		self.flag['weight'] = False
+		self.flag['greedy'] = False
 		self.flag['trajectory'] = False
 
 	def setEnvironment(self, SCENARIO):
 		if SCENARIO == 'Basic':
-			self.Parser = csim.Parser("Basic")
+			self.Parser = csim.Parser("Basic", self.AGENT_NUM, self.OBSTACLE_NUM)
 		elif SCENARIO == 'Corridor':
-			self.Parser = csim.Parser("Corridor")
+			self.Parser = csim.Parser("Corridor", self.AGENT_NUM, self.OBSTACLE_NUM)
 		elif SCENARIO == 'Bottleneck':
-			self.Parser = csim.Parser("Bottleneck")
+			self.Parser = csim.Parser("Bottleneck", self.AGENT_NUM, self.OBSTACLE_NUM)
 		elif SCENARIO == 'Crossway':
-			self.Parser = csim.Parser("Crossway")
+			self.Parser = csim.Parser("Crossway", self.AGENT_NUM, self.OBSTACLE_NUM)
 		elif SCENARIO == 'Circle':
-			self.Parser = csim.Parser("Circle")
+			self.Parser = csim.Parser("Circle", self.AGENT_NUM, self.OBSTACLE_NUM)
+		elif SCENARIO == 'Mix':
+			self.Parser = csim.Parser("Mix", self.AGENT_NUM, self.OBSTACLE_NUM)
 
 		obs = self.Observe()
 
@@ -104,6 +133,8 @@ class Experiment:
 			self.Scenario = Circle(obs)
 		elif SCENARIO == 'Bottleneck':
 			self.Scenario = Bottleneck(obs)
+		elif SCENARIO == 'Mix':
+			self.Scenario = Mix(obs)
 
 	def setNetwork(self):
 		network_dim = []
@@ -112,6 +143,19 @@ class Experiment:
 		network_dim.append(cst.AGENT_ACTION_DIMENSION)
 		self.Algorithm = DDPG(network_dim)
 
+	def load_network(self):
+		self.Algorithm.load_network(type='actor')
+		self.Algorithm.load_network(type='critic')
+		if FLAG_REPLAY_LOAD:
+			self.Algorithm.load_memory()
+		if FLAG_EVAL_LOAD:
+			self.Algorithm.load_eval()
+			self.eval_end = self.Algorithm.eval_end
+			self.eval_col = self.Algorithm.eval_col
+
+	def save_network(self, training_time=0):
+		self.Algorithm.save(self.eval_end, self.eval_col)
+
 	def Reset(self):
 		self.flag['play'] = False
 		self.flag['train'] = False
@@ -119,12 +163,11 @@ class Experiment:
 		self.flag['replay'] = False
 		self.flag['greedy'] = False
 		self.train_iter = 0
-		self.episode_iter = 0
-		self.Parser.Reset(-1)
-		obs = self.Observe()
-		self.Scenario.setObjectData(obs)
+		self.Parser.Reset(-1, self.AGENT_NUM, self.OBSTACLE_NUM)
+		self.Scenario.setObjectData(self.Observe())
 		for i in range(len(self.Scenario.agents)):
 			self.Scenario.agents[i].trajectory = []
+			self.Scenario.agents[i].trajectory_q = []
 
 	def Observe(self):
 		obs = self.Parser.Observe()
@@ -137,7 +180,6 @@ class Experiment:
 		action = self.Algorithm.Action(obs, action_type, run_type)
 		action = self.convert_to_action_double(action)
 		memory = self.Parser.Step(action, run_type == 'TEST')
-
 		return obs, action, memory
 
 	def Update(self, action_type, obs, action, memory):
@@ -145,34 +187,9 @@ class Experiment:
 		if action_type == 'ACTOR':
 			self.Algorithm.Update()
 
-	def WarmUp(self):
-		print "Warming up..."
-
-		self.warmup_iter = cst.WARMUP_ITERATION
-		for i in range(self.warmup_iter):
-			if self.warmup_iter<10 or i%(self.warmup_iter/10)==0:
-				print "Warmup Generation...\t"+str((i / (float)(self.warmup_iter))*100)+"%"
-
-			self.isTerm = False
-			self.Parser.Reset(-1)
-			while not self.isTerm:
-				obs, action, memory = self.Execute(action_type='GREEDY', run_type='TRAIN')
-				memory['obs'] = self.convert_to_numpy(memory['obs'])
-
-				if memory['isTerm']:
-					self.isTerm = True
-
-				self.Scenario.setObjectData(memory['obs'])
-				self.Update('GREEDY', obs, action, memory)
-
-		self.flag['warmup']=False
-		self.Parser.Reset(-1)
-
-		print "Warmup Done!"
-
 	def convert_to_numpy(self, obs):
-		agent_num = len(obs['agent'])
-		for i in range(agent_num):
+		# agent_num = len(obs['agent'])
+		for i in range(self.AGENT_NUM):
 			obs['agent'][i]['v'] = obs['agent'][i]['v'][0]
 			obs['agent'][i]['front'] = obs['agent'][i]['front'][0]
 			obs['agent'][i]['d'] = np.array(obs['agent'][i]['d'])
@@ -200,7 +217,78 @@ class Experiment:
 
 		return action
 
+	def evaluation(self):
+		eval_num = 10
+		col_flag = False
+		avg_end, avg_col = 0, 0
+		step_end, step_col = 0, 0
+		total_end, total_col = 0, 0
+		for i in range(eval_num):
+			self.Parser.Reset(i, 0, 0)
+			col_flag = False
+			for j in range(300):
+				obs, action, memory = self.Execute(action_type='ACTOR', run_type='TEST')
+
+				if not col_flag:
+					total_col += memory['reward']
+					step_col += 1
+
+				total_end += memory['reward']
+				step_end += 1
+
+				if memory['isCol']:
+					col_flag = True
+
+				if memory['isTerm']:
+					break
+
+		avg_col = total_col / float(step_col)
+		avg_end = total_end / float(step_end)
+
+		self.eval_end.append(avg_end)
+		self.eval_col.append(avg_col)
+
+		print "====================================="
+		print "Avg Reward End : ", avg_end
+		print "Avg Reward Col : ", avg_col
+		print "====================================="
+
+	def WarmUp(self):
+		print "Warming up..."
+
+		self.warmup_iter = cst.WARMUP_ITERATION
+		for i in range(self.warmup_iter):
+			if self.warmup_iter<10 or i%(self.warmup_iter/10)==0:
+				print "Warmup Generation...\t"+str((i / (float)(self.warmup_iter))*100)+"%"
+
+			self.isTerm = False
+			self.Parser.Reset(-1, self.AGENT_NUM, self.OBSTACLE_NUM)
+			while not self.isTerm:
+				obs, action, memory = self.Execute(action_type='GREEDY', run_type='TRAIN')
+				memory['obs'] = self.convert_to_numpy(memory['obs'])
+
+				if memory['isTerm']:
+					self.isTerm = True
+
+				self.Scenario.setObjectData(memory['obs'])
+				self.Update('GREEDY', obs, action, memory)
+
+		self.Parser.Reset(-1, self.AGENT_NUM, self.OBSTACLE_NUM)
+		self.flag['warmup']=False
+
+		print "Warmup Done!"
+
+	def eval_save(self):
+		self.Algorithm.criticNN.save(self.critic_dir, str(self.eval_iter))
+		self.Algorithm.actorNN.save(self.actor_dir, str(self.eval_iter))
+
 	def timer_func(self, fps=120):
+		if self.flag['plot']:
+			plt.plot(self.eval_end)
+			plt.plot(self.eval_col)
+			plt.show()
+			self.flag['plot'] = False
+
 		if self.flag['replay']:
 			fps = self.fps
 			self.frame += 1
@@ -209,12 +297,22 @@ class Experiment:
 			self.frame = 0
 			if self.flag['train']:
 				if self.isTerm:
+					self.isTerm = False
 					print "New Episode"
 					self.Algorithm.expl_rate_decay()
-					self.isTerm = False
 					self.episode_iter += 1
 					if self.episode_iter % 10 == 0:
 						print "episode : ", self.episode_iter
+					if self.eval_flag:
+						self.eval_flag = False
+						self.evaluation()
+						self.eval_iter += 1
+						if FLAG_EVAL_SAVE:
+							self.eval_save()
+
+					# self.AGENT_NUM += 1
+					# self.OBSTACLE_NUM += 1
+					self.Parser.Reset(-1, self.AGENT_NUM, self.OBSTACLE_NUM)
 
 				obs, action, memory = self.Execute(action_type='ACTOR', run_type='TRAIN')
 				memory['obs'] = self.convert_to_numpy(memory['obs'])
@@ -223,18 +321,12 @@ class Experiment:
 
 				if memory['isTerm']:
 					self.isTerm = True
-					self.Parser.Reset(-1)
 
 				self.Update('ACTOR', obs, action, memory)
 				self.train_iter += 1
-				if self.train_iter % 1000 == 0:
+				if self.train_iter % 500 == 0:
 					print "train iter : ", self.train_iter
-
-				# if self.train_iter == 30000:
-				# 	print "Stopped Training...!"
-				# 	self.save_network(m_replay = True)
-				# 	self.flag['train'] = not self.flag['train']
-				# 	self.flag['play'] = False
+					self.eval_flag=True
 
 			elif self.flag['play']:
 				if self.flag['greedy']:
@@ -258,18 +350,15 @@ class Experiment:
 		glutPostRedisplay()
 		glutTimerFunc(int(1000/fps), self.timer_func, fps)
 
-	def load_network(self, m_replay=False):
-		self.Algorithm.load_network(type='actor')
-		self.Algorithm.load_network(type='critic')
-		if m_replay:
-			self.Algorithm.load_memory()
-			self.Algorithm.load_eval()
+	def save_plot(self):
+		plt.plot(self.eval_end)
+		plt.plot(self.eval_col)
+		plt.savefig("../data/ckpt/actor/tmp/graph.png")
+		plt.savefig("../data/ckpt/critic/tmp/graph.png")
 
-	def save_network(self, m_replay=False, training_time=0, eval_list=None):
-		self.Algorithm.save(m_replay, training_time, eval_list)
-
-	def mouseCB(self, button, state, x, y):
-		pass
+	def change_dir(self):
+		os.rename(self.actor_dir, "../data/ckpt/actor/"+str(self.Algorithm.cur_time)+"/")
+		os.rename(self.critic_dir, "../data/ckpt/critic/"+str(self.Algorithm.cur_time)+"/")
 
 	def keyCB(self, key, x, y):
 		if key:
@@ -279,11 +368,16 @@ class Experiment:
 			elif key == 'd':
 				if self.flag['train']:
 					print "Stopped Training...!"
-					self.save_network(m_replay = True)
+					self.save_network()
+					if FLAG_EVAL_SAVE:
+						self.save_plot()
+						self.change_dir()
 				else:
 					print "Start Training...!"
 				self.flag['train'] = not self.flag['train']
 				self.flag['play'] = False
+			elif key == 'z':
+				self.flag['plot'] = True
 			elif key == '=':
 				self.fps += 10
 				print "fps : ", self.fps
@@ -311,15 +405,15 @@ class Experiment:
 			elif key == 'r':
 				self.Reset()
 			elif key == 'p':
-				self.flag['replay'] = True
-				self.frame = 0
 				print "START replay"
+				self.frame = 0
+				self.flag['replay'] = True
 				self.flag['play'] = False
 				self.flag['greedy'] = False
 				self.flag['train'] = False
 			elif key == 't':
 				self.flag['trajectory'] = not self.flag['trajectory']
-				print "traj : ", self.flag['trajectory']
+				print "trajectory : ", self.flag['trajectory']
 			elif key == 'n':
 				print "One Step"
 				self.flag['play'] = True
@@ -329,24 +423,25 @@ class Experiment:
 				print "Policy : Greedy"
 				self.flag['play'] = True
 				self.flag['greedy'] = True
-			# elif key == 'm':
-			# 	print "memorize"
-			# 	if len(self.Scenario.record_agent_p) > 0:
-			# 		self.Memorize()
+			elif key == 'm':
+				self.coord_save()
 
-	# def Memorize(self):
-	# 	f = open(".../data/ckpt/memorize/" + "memory_"+self.scen+, 'w')
-	# 	f.write("agent "+len(self.Scenario.))
-	# 	f.close()
+	def coord_save(self):
+		f = open("coord.txt", 'w')
+		# f.write("agent "+str(AGENT_NUM)+"\n\n")
+		traj_len = len(self.Scenario.agents[0].trajectory)
+		for i in range(traj_len):
+			for j in range(self.AGENT_NUM):
+				f.write(str(self.Scenario.agents[j].trajectory[i][0]) + "," + str(self.Scenario.agents[j].trajectory[i][1]) + "," + str(self.Scenario.agents[j].trajectory_q[i][0]) + "," + str(self.Scenario.agents[j].trajectory_q[i][1]))
+				f.write('\n')
+			f.write('\n')
+		f.close()
 
 	def reshape(self, w, h):
-		glEnable(GL_DEPTH_TEST)
-		glDepthFunc(GL_LESS)
 		glViewport(0, 0, w, h)
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		glOrtho(-30, 30, -20, 20, -3, 3)
-		# gluPerspective(5.0, 1260.0/680.0, 0.1, 1000)
+		glOrtho(-cst.WIDTH, cst.WIDTH, -cst.HEIGHT, cst.HEIGHT, -cst.DEPTH, cst.DEPTH)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
@@ -369,7 +464,6 @@ class Experiment:
 
 	def display(self):
 		glClearColor(0.8, 0.8, 0.8, 0.0)
-		glClearDepth(1.0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
@@ -390,5 +484,5 @@ class Experiment:
 		glutSwapBuffers()
 
 if __name__=="__main__":
-	exp = Experiment()
+	exp = Experiment(cst.WINDOW_WIDTH, cst.WINDOW_HEIGHT)
 

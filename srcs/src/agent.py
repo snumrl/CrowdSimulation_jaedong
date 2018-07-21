@@ -28,7 +28,6 @@ def drawQuad(p_x, p_y, p_z):
 	glVertex3f(-p_y,  p_x, p_z)
 	glEnd()
 
-
 class Agent(CrowdObject):
 	def __init__(self, state, color='RED'):
 		self.reset(state, color)
@@ -100,6 +99,7 @@ class Agent(CrowdObject):
 		self.q_lim = cst.AGENT_SENSOR_DIMENSION
 		self.q_val = np.ndarray(shape=(self.q_lim))
 		self.trajectory = []
+		self.trajectory_q = []
 
 	def setView(self, new_d_map):
 		self.d_map = new_d_map
@@ -135,10 +135,7 @@ class Agent(CrowdObject):
 
 			glBegin(GL_LINES)
 			l = len(self.trajectory)
-			# if l > 30:
-			# 	for i in range(l-30, l):
-			# 		glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 10)
-			# else:
+
 			for i in range(l):
 				glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 0.5)
 			glEnd()
@@ -223,7 +220,7 @@ class Obstacle(CrowdObject):
 	def render(self):
 		#render Obstacle
 		glPushMatrix()
-		glColor3f(0.4, 0.4, 0.4)
+		glColor3f(0.2, 0.2, 0.25)
 		glTranslatef(self.p[0], self.p[1], 0)
 		quad = gluNewQuadric()
 		gluSphere(quad, self.r, 50, 50)

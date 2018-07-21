@@ -16,19 +16,14 @@ from time import localtime, strftime
 from constants import Constants as cst
 from replaymemory import ReplayMemory
 
-def random_variables(n, min, max, isInteger=False):
-	arr = np.random.random(n) * (double)(max-min) + (double)(min)
+def random_variables(n, _min, _max, isInteger=False):
+	arr = np.random.random(n) * (double)(_max-_min) + (double)(_min)
 	return arr
 
 class DDPG:
 	def __init__(self, dim):
-		self.critic_path = cst.CN_CKPT_PATH
-		self.actor_path = cst.AN_CKPT_PATH
-		self.replaymemory_path = cst.RM_PATH
-
 		self.dim_body = dim[0]
 		self.dim_sensor = dim[1]
-		self.dim_state = dim[0] + dim[1]*3
 		self.dim_action = dim[2]
 
 		self.sess = tf.InteractiveSession()
@@ -70,7 +65,7 @@ class DDPG:
 		agent_num = len(obs['agent'])
 		for i in range(0, agent_num):
 			agent_obs = obs['agent'][i]
-			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < cst.AGENT_RADIUS + 0.5:
+			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < cst.AGENT_RADIUS + 1.0:
 				action = {}
 				action['theta'] = 0
 				action['velocity'] = 0
@@ -81,48 +76,6 @@ class DDPG:
 					action = self.action_random(action)
 
 			action_list.append(action)
-
-		return action_list
-
-	def action(self, obs, action_type, run_type):
-		if action_type == 'GREEDY':
-			return self.action_greedy(obs)
-
-		self.isExploration(run_type=='TRAIN')
-
-		action_list = []
-		for i in range(0, self.agent_count):
-			agent_obs = obs['agent'][i]
-			if np.linalg.norm(agent_obs['d']-agent_obs['p']) < agent_obs['r'] + 10:
-				action = {}
-				action['theta'] = 0
-				action['velocity'] = 0
-				action['stop'] = True
-			else:
-				action = self.get_action(agent_obs, run_type=='TEST')
-				if self.expl:
-					print "action : ", action
-					action = self.action_random(action)
-					print "action noise : ", action
-
-			action_list.append(action)
-
-		# for i in range(self.agent_count):
-		#   agent_obs = obs['agent'][i]
-		#   if np.linalg.norm(agent_obs['d']-agent_obs['p']) < agent_obs['r'] + 5:
-		#       action = {}
-		#       action['theta'] = 0
-		#       action['velocity'] = 0
-		#       action['stop'] = True
-		#   else:
-		#       if i == 0:
-		#           action = self.get_action(agent_obs, run_type=='TEST')
-		#           if self.expl:
-		#               action = self.action_random()
-		#       else:
-		#           action = self.get_action_greedy(agent_obs)
-
-		#   action_list.append(action)
 
 		return action_list
 
@@ -156,7 +109,7 @@ class DDPG:
 		return action_list
 
 	def get_action_greedy(self, agent_obs):
-		if np.linalg.norm(agent_obs['d']-agent_obs['p']) < 0.5 + 0.5:
+		if np.linalg.norm(agent_obs['d']-agent_obs['p']) < 1.0:
 			action = {}
 			action['theta'] = 0
 			action['velocity'] = 0
@@ -180,9 +133,7 @@ class DDPG:
 			if agent_obs['d_map'][angle] < 0.5+offset:
 				continue
 
-			# curr_angle = 190/2 - angle*10
 			curr_angle = (190/2 - angle*10)/180.0*3.141592
-			# curr_q = mMath.AngleToCoor(curr_angle + agent_obs['front']) * agent_obs['d_map'][angle]
 			curr_q = mMath.RadianToCoor(curr_angle + agent_obs['front']) * agent_obs['d_map'][angle]
 			curr_dis = direction[0]*curr_q[0] +  direction[1]*curr_q[1]
 			if greedy_dir == 0:
@@ -271,7 +222,6 @@ class DDPG:
 			state_ = copy.copy(self.preprocess(m['state']))
 			state_body = copy.copy(state_['body'])
 			state_sensor = copy.copy(state_['sensor'])
-			# print "action: ", m['action']
 			action = copy.copy(np.array([m['action']['theta'], m['action']['velocity']]))
 			actor_body_batch.append(state_body[0])
 			actor_sensor_batch.append(state_sensor[0])
@@ -325,28 +275,21 @@ class DDPG:
 				self.rm.addMemory('critic', obs, act, next_state, reward, is_term)
 
 	#==================save & load==========================
-
-	def save(self, m_replay=False, training_time = 0, eval_list = None):
-		cur_time = strftime("%Y%m%d_%I%M.ckpt", localtime())
+	def save(self, eval_end = None, eval_col = None):
+		self.cur_time = strftime("%Y%m%d_%I%M.ckpt", localtime())
 
 		print "Save Critic Network : ",
-		self.criticNN.save(self.critic_path, cur_time)
+		self.criticNN.save(cst.CN_CKPT_PATH, self.cur_time)
 
 		print "Save Actor Network : ",
-		self.actorNN.save(self.actor_path, cur_time)
+		self.actorNN.save(cst.AN_CKPT_PATH, self.cur_time)
 
-		print "Parameters Saved...!"
-		self.save_parameters(cur_time, training_time)
+		self.save_parameters(self.cur_time)
 
-		print "Networks Saved...!"
+		self.save_replaymemory(self.cur_time)
 
-		if m_replay:
-			print "Replay Memories Saved...!"
-			self.save_replaymemory(cur_time)
-
-		if eval_list != None:
-			print "Evaluation List Saved...!"
-			self.save_evaluation(cur_time, eval_list)
+		if eval_end != None and eval_col != None:
+			self.save_evaluation(self.cur_time, eval_end, eval_col)
 
 	def save_replaymemory(self, cur_time):
 		f = open(cst.RM_PATH+"checkpoint", 'w')
@@ -357,19 +300,26 @@ class DDPG:
 		pickle.dump(self.rm, f, protocol=pickle.HIGHEST_PROTOCOL)
 		f.close()
 
-	def save_evaluation(self, cur_time, eval_list=None):
+		print "Replay Memories Saved...!"
+
+	def save_evaluation(self, cur_time, eval_end=None, eval_col=None):
 		f = open(cst.EVAL_PATH+"checkpoint", 'w')
 		f.write(cur_time)
 		f.close()
 
-		f = open(cst.EVAL_PATH+"eval_"+cur_time, 'w')
-		pickle.dump(eval_list, f, protocol=pickle.HIGHEST_PROTOCOL)
+		f = open(cst.EVAL_PATH+"eval_end_"+cur_time, 'w')
+		pickle.dump(eval_end, f, protocol=pickle.HIGHEST_PROTOCOL)
 		f.close()
 
-	def save_parameters(self, cur_time, training_time):
+		f = open(cst.EVAL_PATH+"eval_col_"+cur_time, 'w')
+		pickle.dump(eval_col, f, protocol=pickle.HIGHEST_PROTOCOL)
+		f.close()
+
+		print "Evaluation List Saved...!"
+
+	def save_parameters(self, cur_time):
 		f_read = open(cst.PM_READ_PATH, 'r')
 		f_write = open(cst.PM_WRITE_PATH+"pm_"+cur_time+".txt", 'w')
-		f_write.write("traning time : "+str(training_time))
 		while True:
 			line = f_read.readline()
 			if not line:
@@ -378,18 +328,20 @@ class DDPG:
 		f_read.close()
 		f_write.close()
 
+		print "Parameters Saved...!"
+
 	def load_network(self, type):
 		if type=='actor':
-			print "Load Recent Actor Network : ",
-			self.actorNN.load(self.actor_path)
+			print "Load Actor Network : ",
+			self.actorNN.load(cst.AN_CKPT_PATH+"tmp/")
 		elif type=='critic':
-			print "Load Recent Critic Network : ",
-			self.criticNN.load(self.critic_path)
+			print "Load Critic Network : ",
+			self.criticNN.load(cst.CN_CKPT_PATH+"tmp/")
 
 	def load_memory(self):
 		f = open(cst.RM_PATH+"checkpoint", 'r')
 		recent_file_name = f.readline()
-		recent_file_name = recent_file_name[:-1]
+		# recent_file_name = recent_file_name[:-1]
 		f.close()
 
 		f_rm = open(cst.RM_PATH+"rm_"+recent_file_name, 'r')
@@ -401,20 +353,27 @@ class DDPG:
 	def load_eval(self):
 		f = open(cst.EVAL_PATH+"checkpoint", 'r')
 		recent_file_name = f.readline()
+		self.episode_num = f.readline()
 		f.close()
 
-		f_eval = open(cst.EVAL_PATH+"eval_"+recent_file_name, 'r')
-		self.eval = pickle.load(f_eval)
+		f_eval = open(cst.EVAL_PATH+"eval_end_"+recent_file_name, 'r')
+		self.eval_end = pickle.load(f_eval)
 		f_eval.close()
 
-		print "Load Eval List :  ", cst.EVAL_PATH,"eval_",recent_file_name
+		print "Load Eval List :  ", cst.EVAL_PATH,"eval_end_",recent_file_name
+
+		f_eval = open(cst.EVAL_PATH+"eval_col_"+recent_file_name, 'r')
+		self.eval_col = pickle.load(f_eval)
+		f_eval.close()
+
+		print "Load Eval List :  ", cst.EVAL_PATH,"eval_col_",recent_file_name
 
 	#=================other===============================
 
 	def preprocess(self, agent_obs):
 		state = {}
 		state['body'] = np.array(self.preprocess_body(agent_obs['p'], agent_obs['q'], agent_obs['v'], agent_obs['d'])).reshape((1, self.dim_body))
-		state['sensor'] = np.array(self.preprocess_sensor(agent_obs['d_map'], agent_obs['v_map'], 20, cst.VISION_DEPTH)).reshape((1, 60))
+		state['sensor'] = np.array(self.preprocess_sensor(agent_obs['d_map'], agent_obs['v_map'], self.dim_sensor, cst.VISION_DEPTH)).reshape((1, self.dim_sensor))
 
 		return state
 
@@ -447,22 +406,7 @@ class DDPG:
 		relative_dir.append(mMath.InnerProduct(q_, pd_))
 		relative_dir.append(mMath.CrossProduct(q_, pd_))
 
-		# return [v, relative_dir[0], relative_dir[1], pd_len]
-		# print "body : ", [relative_dir[0], relative_dir[1], pd_len]
 		return [relative_dir[0], relative_dir[1], pd_len]
-
-		# pd = np.array(d_-p_)
-		# pd_len = np.linalg.norm(pd)
-		# pd_vec = pd / pd_len
-
-		# inner = mMath.InnerProduct(q_, pd_vec)
-		# cross = mMath.CrossProduct(q_, pd_vec)
-
-		# cross_val = 1.0
-		# if cross < 0:
-			# cross_val = 0.0
-
-		# return [v, inner, cross_val, pd_len]
 
 	def preprocess_sensor(self, d_map, v_map, q_lim, vision_depth):
 		d_map_ = np.divide(d_map, vision_depth, dtype=float)
@@ -471,12 +415,6 @@ class DDPG:
 		sensor = np.append(d_map_, v_map_)
 
 		return sensor
-
-	def get_agent_count(self, is_train, obs):
-		if is_train:
-			return 1
-		else:
-			return len(obs['agent'])
 
 	def isExploration(self, flag):
 		self.expl = (flag and random.random() < self.exploration_rate)

@@ -1,5 +1,5 @@
-#ifndef BOTTLENECK_H
-#define BOTTLENECK_H
+#ifndef PASSING_H
+#define PASSING_H
 
 #include <vector>
 
@@ -7,13 +7,13 @@
 
 using namespace std;
 
-class Bottleneck : public Env
+class Passing : public Env
 {
 	protected:
 
 	public:
-		Bottleneck(int agent_n, int obs_n);
-		~Bottleneck();
+		Passing(int agent_n, int obs_n);
+		~Passing();
 
 		virtual void Reset(int idx) override;
 		virtual void initWalls() override;

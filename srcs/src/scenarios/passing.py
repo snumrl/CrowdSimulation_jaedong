@@ -13,12 +13,12 @@ import queue
 import copy
 import math
 
-class Corridor:
+class Passing:
 	def __init__(self, obs):
-		self.name = 'Corridor'
+		self.name = 'Passing'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
-		self.init_walls();
+		self.init_walls()
 		self.init_record()
 
 	def init_agents(self, agent_obs):
@@ -26,14 +26,17 @@ class Corridor:
 		self.agent_count = len(agent_obs)
 		for i in range(self.agent_count):
 			state={}
-			state['v'] = agent_obs[i]['v']
+			state['r'] = np.array(agent_obs[i]['r'])
 			state['p'] = np.array(agent_obs[i]['p'])
-			state['q'] = np.array(agent_obs[i]['q'])
 			state['d'] = np.array(agent_obs[i]['d'])
 			state['front'] = agent_obs[i]['front']
 			state['color'] = np.array(agent_obs[i]['color'])
-			state['d_map'] = np.array(agent_obs[i]['d_map'])
-			state['v_map'] = np.array(agent_obs[i]['v_map'])
+			state['vision'] = np.array(agent_obs[i]['sensor_state'])
+			state['offset'] = np.array(agent_obs[i]['offset_data'])
+			# state['v_x'] = agent_obs[i]['v_x']
+			# state['v_y'] = agent_obs[i]['v_y']
+			# state['d_map'] = np.array(agent_obs[i]['d_map'])
+			# state['v_map'] = np.array(agent_obs[i]['v_map'])
 			self.agents.append(Agent(state))
 
 	def init_obstacles(self, obstacle_obs):
@@ -42,10 +45,14 @@ class Corridor:
 		for i in range(self.obstacle_count):
 			state={}
 			state['p'] = np.array(obstacle_obs[i]['p'])
+			state['r'] = np.array(obstacle_obs[i]['r'])
+			state['front'] = np.array(obstacle_obs[i]['front'])
 			self.obstacles.append(Obstacle(state))
 
 	def init_walls(self):
 		self.walls = []
+		# self.walls.append(Wall([-24, 14], [1, 0], 48))
+		# self.walls.append(Wall([-24, -14], [1, 0], 48))
 
 	def init_record(self):
 		self.record_buffer_p = queue.Queue(maxsize=5000)
@@ -57,52 +64,39 @@ class Corridor:
 		self.record_size = 0
 
 	def setObjectData(self, obs):
-		agent_data = obs['agent']
-		self.agent_num = len(obs['agent'])
+		agent_obs = obs['agent']
 		for i in range(self.agent_count):
-			self.agents[i].setP(agent_data[i]['p'])
-			self.agents[i].setQ(agent_data[i]['q'])
-			self.agents[i].setD(agent_data[i]['d'])
-			self.agents[i].setFront(agent_data[i]['front'])
-			self.agents[i].setDmap(agent_data[i]['d_map'])
-			self.agents[i].setColor(agent_data[i]['color'])
-			self.agents[i].trajectory.append(agent_data[i]['p'])
-			self.agents[i].trajectory_q.append(agent_data[i]['q'])
+			r = np.array(agent_obs[i]['r'])
+			p = np.array(agent_obs[i]['p'])
+			d = np.array(agent_obs[i]['d'])
+			front = agent_obs[i]['front']
+			color = np.array(agent_obs[i]['color'])
+			vision = np.array(agent_obs[i]['sensor_state'])
+			offset = np.array(agent_obs[i]['offset_data'])
+			self.agents[i].setR(r)
+			self.agents[i].setP(p)
+			self.agents[i].setD(d)
+			self.agents[i].setFront(front)
+			self.agents[i].setColor(color)
+			self.agents[i].setVision(vision)
+			self.agents[i].setOffset(offset)
 
 		obs_data = obs['obstacle']
 		for i in range(self.obstacle_count):
 			self.obstacles[i].setP(obs_data[i]['p'])
+			self.obstacles[i].setR(obs_data[i]['r'])
+			self.obstacles[i].setFront(obs_data[i]['front'])
 
-	def coord(self, frame):
-		f = open("coord", 'w')
-		f.write("agent 10")
-		for i in range(frame):
-			for j in range(10):
-				f.write(self.record_agent_p[i][j][0] + "," + self.record_agent_p[i][j][1] + "," + self.record_agent_q[i][j][0] + "," + self.record_agent_q[i][j][1])
-
-		f.close()
-
-	def render(self, depth=False, trajectory=False):
+	def render(self, vision=False, trajectory=False):
 		for i in range(self.obstacle_count):
 			self.obstacles[i].render()
 
-		self.agents[0].render(depth, trajectory, 0)
+		self.agents[0].render(vision, trajectory, 0)
 		for i in range(1, self.agent_count):
 			self.agents[i].render(False, trajectory, i)
 
-		glColor3f(0.2, 0.2, 0.25)
-
-		glPushMatrix()
-		glTranslatef(0, 17.5, 0.5)
-		glScalef(60, 5.0, 1.0)
-		glutSolidCube(1.0)
-		glPopMatrix()
-
-		glPushMatrix()
-		glTranslatef(0, -17.5, 0.5)
-		glScalef(60, 5.0, 1.0)
-		glutSolidCube(1.0)
-		glPopMatrix()
+		for i in range(len(self.walls)):
+			self.walls[i].render()
 
 	def record(self, flag=False):
 		if flag:
@@ -137,7 +131,6 @@ class Corridor:
 
 	def render_record(self, frame):
 		frame = frame % self.record_size
-
 		for i in range(self.agent_count):
 			self.agents[i].setP(self.record_agent_p[frame][i])
 			self.agents[i].setQ(self.record_agent_q[frame][i])
@@ -146,5 +139,3 @@ class Corridor:
 			self.obstacles[i].setP(self.record_obs_p[i])
 
 		self.render()
-
-

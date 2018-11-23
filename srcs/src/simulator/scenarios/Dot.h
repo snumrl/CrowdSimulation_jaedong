@@ -1,5 +1,5 @@
-#ifndef CIRCLE_H
-#define CIRCLE_H
+#ifndef DOT_H
+#define DOT_H
 
 #include <vector>
 
@@ -7,13 +7,13 @@
 
 using namespace std;
 
-class Circle : public Env
+class Dot : public Env
 {
 	protected:
 
 	public:
-		Circle(int agent_n, int obs_n);
-		~Circle();
+		Dot(int agent_n, int obs_n);
+		~Dot();
 
 		virtual void Reset(int idx) override;
 		virtual void initWalls() override;

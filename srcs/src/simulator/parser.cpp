@@ -1,51 +1,36 @@
 #include <iostream>
 #include <vector>
-
 #include "parser.h"
 #include "scenarios/Basic.h"
-#include "scenarios/Corridor.h"
-#include "scenarios/Crossway.h"
-#include "scenarios/Circle.h"
-#include "scenarios/Bottleneck.h"
-#include "scenarios/Mix.h"
+#include "scenarios/Passing.h"
+#include "scenarios/Dot.h"
 
-using namespace boost::python;
 using namespace std;
 
-int AGENT_NUM = 0;
-int OBSTACLE_NUM = 0;
+namespace p = boost::python;
+namespace np = boost::python::numpy;
 
 Parser::Parser(string Scenario, int a, int o)
 {
+	np::initialize();
+	Py_Initialize();
+
 	cout << "Scenario : " << Scenario << endl;
 
-	AGENT_NUM = a;
-	OBSTACLE_NUM = o;
+	agent_num = a;
+	obstacle_num = o;
 
-	if(Scenario.compare("Basic") == 0){
-		_env = new Basic(AGENT_NUM, OBSTACLE_NUM);
-	}
-	else if(Scenario.compare("Corridor") == 0){
-		_env = new Corridor(AGENT_NUM, OBSTACLE_NUM);
-	}
-	else if(Scenario.compare("Crossway") == 0){
-		_env = new Crossway(AGENT_NUM, OBSTACLE_NUM);
-	}
-	else if(Scenario.compare("Circle") == 0){
-		_env = new Circle(AGENT_NUM, OBSTACLE_NUM);
-	}
-	else if(Scenario.compare("Bottleneck") == 0){
-		_env = new Bottleneck(AGENT_NUM, OBSTACLE_NUM);
-	}
-	else if(Scenario.compare("Mix") == 0){
-		_env = new Mix(AGENT_NUM, OBSTACLE_NUM);
-	}
+	if(Scenario.compare("Basic") == 0)
+		_env = new Basic(agent_num, obstacle_num);
+	else if(Scenario.compare("Passing") == 0)
+		_env = new Passing(agent_num, obstacle_num);
+	else if(Scenario.compare("Dot") == 0)
+		_env = new Dot(agent_num, obstacle_num);
 }
 
 Parser::~Parser()
 {
 	cout << "~Parser" << endl;
-
 	delete _env;
 }
 
@@ -54,107 +39,108 @@ void Parser::Reset(int idx,  int a, int o)
 	_env -> Reset(idx);
 }
 
-dict Parser::Step(list action, bool isTest)
+p::dict Parser::Step(np::ndarray& action_, bool isTest)
 {
-	for(int i=0; i<AGENT_NUM; i++)
+	float* a = reinterpret_cast<float*>(action_.get_data());
+
+	double w, v_x, v_y;
+	for(int i=0; i<action_.shape(0); i++)
 	{
-		double theta = extract<double>(action[i]["theta"]);
-		double velocity = extract<double>(action[i]["velocity"]);
-		bool stop = extract<bool>(action[i]["stop"]);
-		_env->setAction(i, theta, velocity, stop);
+		int idx_offset = action_.shape(1) * i;
+
+		w = a[idx_offset];
+		v_x = a[idx_offset+1];
+		v_y = a[idx_offset+2];
+
+		_env->setAction(i, w, v_x, v_y);
 	}
 
 	_env->Update();
 
-	dict memory;
+	p::dict memory;
 	memory["obs"] = Observe();
-	memory["isTerm"] = _env->isTerm(isTest);
 	memory["isCol"] = _env->isCol();
+	memory["isTerm"] = _env->isTerm(isTest);
 	memory["reward"] = _env->getReward();
+	double* reward_sep = _env->getRewardSep();
+	p::list reward_sep_list;
+	for(int i=0; i<4; i++)
+		reward_sep_list.append(reward_sep[i]);
+	memory["reward_sep"] = reward_sep_list;
 
 	return memory;
 }
 
-dict Parser::Observe()
+p::dict Parser::Observe()
 {
-	dict obs;
-	list agent_state;
-	list obstacle_state;
+	p::dict obs;
+	p::list agent_state;
+	p::list obstacle_state;
 
 	vector<Agent*> agents = _env -> Observe();
 	vector<Obstacle*> obstacles = _env-> getObstacles();
 
 	Agent* cur_agent;
-	for(int i=0; i<AGENT_NUM; i++)
+	for(int i=0; i<agent_num; i++)
 	{
 		cur_agent = agents.at(i);
+		p::dict cur_agent_data;
 
-		dict cur_agent_state;
+		double r_data[10]; // r, p, d, front, color
+		cur_agent->getRenderData(r_data);
+		p::list render_list;
+		for(int j=0; j<10; j++)
+			render_list.append(r_data[j]);
 
-		double* p = cur_agent->getP();
-		list p_list;
-		p_list.append(p[0]);
-		p_list.append(p[1]);
-		cur_agent_state["p"] = p_list;
+		double body_data[14]; // body
+		cur_agent->getBodyState(body_data);
+		p::list body_list;
+		for(int j=0; j<14; j++)
+			body_list.append(body_data[j]);
 
-		double* q = cur_agent->getQ();
-		list q_list;
-		q_list.append(q[0]);
-		q_list.append(q[1]);
-		cur_agent_state["q"] = q_list;
+		double* sensor_data; // sensor
+		sensor_data = cur_agent->getVision();
+		p::list sensor_list;
+		for(int j=0; j<45; j++)
+			sensor_list.append(sensor_data[j]/10.0);
 
-		double* d = cur_agent->getD();
-		list d_list;
-		d_list.append(d[0]);
-		d_list.append(d[1]);
-		cur_agent_state["d"] = d_list;
+		double* sensor_offset_data;
+		sensor_offset_data = cur_agent->getVisionOffset();
+		p::list offset_list;
+		for(int j=0; j<45; j++)
+			offset_list.append(sensor_offset_data[j]);
 
-		list v_list;
-		v_list.append(cur_agent->getV());
-		cur_agent_state["v"] = v_list;
+		cur_agent_data["render_data"] = render_list;
+		cur_agent_data["body_state"] =  body_list;
+		cur_agent_data["sensor_state"] =  sensor_list;
+		cur_agent_data["offset_data"] = offset_list;
 
-		list f_list;
-		f_list.append(cur_agent->getFront());
-		cur_agent_state["front"] = f_list;
-
-		double* c = cur_agent->getColor();
-		list c_list;
-		c_list.append(c[0]);
-		c_list.append(c[1]);
-		c_list.append(c[2]);
-		cur_agent_state["color"] = c_list;
-
-		list dmap_list;
-		double* cur_dmap = cur_agent->getDmap();
-		for(int i=0; i<20; i++)
-		{
-			dmap_list.append(cur_dmap[i]);
-		}
-		cur_agent_state["d_map"] = dmap_list;
-
-		list vmap_list;
-		double* cur_vmap = cur_agent->getVmap();
-		for(int i=0; i<40; i++)
-		{
-			vmap_list.append(cur_vmap[i]);
-		}
-		cur_agent_state["v_map"] = vmap_list;
-
-		agent_state.append(cur_agent_state);
+		agent_state.append(cur_agent_data);
 	}
 
 	Obstacle* cur_obstacle;
-	for(int i=0; i<OBSTACLE_NUM; i++)
+	for(int i=0; i<obstacle_num; i++)
 	{
 		cur_obstacle = obstacles.at(i);
 
-		dict cur_obstacle_state;
+		p::dict cur_obstacle_state;
 
 		double* p = cur_obstacle->getP();
-		list p_list;
+		p::list p_list;
 		p_list.append(p[0]);
 		p_list.append(p[1]);
 		cur_obstacle_state["p"] = p_list;
+
+		double* r = cur_obstacle->getR();
+		p::list r_list;
+		r_list.append(r[0]);
+		r_list.append(r[1]);
+		cur_obstacle_state["r"] = r_list;
+
+		double f = cur_obstacle->getFront();
+		p::list f_list;
+		f_list.append(f);
+		cur_obstacle_state["front"] = f_list;
 
 		obstacle_state.append(cur_obstacle_state);
 	}
@@ -164,20 +150,9 @@ dict Parser::Observe()
 	return obs;
 }
 
-list Parser::dmap_to_list(double* d)
-{
-	list d_;
-	for(int i=0; i<20; i++)
-	{
-		d_.append(d[i]);
-	}
-
-	return d_;
-}
-
 BOOST_PYTHON_MODULE(csim)
 {
-	class_<Parser>("Parser", init<std::string, int, int>())
+	p::class_<Parser>("Parser", p::init<std::string, int, int>())
 		.def("Reset", &Parser::Reset)
 		.def("Step", &Parser::Step)
 		.def("Observe", &Parser::Observe);

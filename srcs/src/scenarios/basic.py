@@ -9,7 +9,7 @@ from agent import Agent, Obstacle, Wall
 from constants import Constants as cst
 
 import numpy as np
-import Queue
+import queue
 import copy
 import math
 
@@ -26,14 +26,17 @@ class Basic:
 		self.agent_count = len(agent_obs)
 		for i in range(self.agent_count):
 			state={}
-			state['v'] = agent_obs[i]['v']
+			state['r'] = np.array(agent_obs[i]['r'])
 			state['p'] = np.array(agent_obs[i]['p'])
-			state['q'] = np.array(agent_obs[i]['q'])
 			state['d'] = np.array(agent_obs[i]['d'])
 			state['front'] = agent_obs[i]['front']
 			state['color'] = np.array(agent_obs[i]['color'])
-			state['d_map'] = np.array(agent_obs[i]['d_map'])
-			state['v_map'] = np.array(agent_obs[i]['v_map'])
+			state['vision'] = np.array(agent_obs[i]['sensor_state'])
+			state['offset'] = np.array(agent_obs[i]['offset_data'])
+			# state['v_x'] = agent_obs[i]['v_x']
+			# state['v_y'] = agent_obs[i]['v_y']
+			# state['d_map'] = np.array(agent_obs[i]['d_map'])
+			# state['v_map'] = np.array(agent_obs[i]['v_map'])
 			self.agents.append(Agent(state))
 
 	def init_obstacles(self, obstacle_obs):
@@ -42,6 +45,8 @@ class Basic:
 		for i in range(self.obstacle_count):
 			state={}
 			state['p'] = np.array(obstacle_obs[i]['p'])
+			state['r'] = np.array(obstacle_obs[i]['r'])
+			state['front'] = np.array(obstacle_obs[i]['front'])
 			self.obstacles.append(Obstacle(state))
 
 	def init_walls(self):
@@ -50,8 +55,8 @@ class Basic:
 		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, 200], [1, 0], cst.WINDOW_WIDTH))
 
 	def init_record(self):
-		self.record_buffer_p = Queue.Queue(maxsize=5000)
-		self.record_buffer_q = Queue.Queue(maxsize=5000)
+		self.record_buffer_p = queue.Queue(maxsize=5000)
+		self.record_buffer_q = queue.Queue(maxsize=5000)
 		self.record_obs_p = []
 		self.record_agent_p = []
 		self.record_agent_q = []
@@ -59,24 +64,34 @@ class Basic:
 		self.record_size = 0
 
 	def setObjectData(self, obs):
-		agent_data = obs['agent']
+		agent_obs = obs['agent']
 		for i in range(self.agent_count):
-			self.agents[i].setP(agent_data[i]['p'])
-			self.agents[i].setQ(agent_data[i]['q'])
-			self.agents[i].setD(agent_data[i]['d'])
-			self.agents[i].setFront(agent_data[i]['front'])
-			self.agents[i].setDmap(agent_data[i]['d_map'])
-			self.agents[i].setColor(agent_data[i]['color'])
+			r = np.array(agent_obs[i]['r'])
+			p = np.array(agent_obs[i]['p'])
+			d = np.array(agent_obs[i]['d'])
+			front = agent_obs[i]['front']
+			color = np.array(agent_obs[i]['color'])
+			vision = np.array(agent_obs[i]['sensor_state'])
+			offset = np.array(agent_obs[i]['offset_data'])
+			self.agents[i].setR(r)
+			self.agents[i].setP(p)
+			self.agents[i].setD(d)
+			self.agents[i].setFront(front)
+			self.agents[i].setColor(color)
+			self.agents[i].setVision(vision)
+			self.agents[i].setOffset(offset)
 
 		obs_data = obs['obstacle']
 		for i in range(self.obstacle_count):
 			self.obstacles[i].setP(obs_data[i]['p'])
+			self.obstacles[i].setR(obs_data[i]['r'])
+			self.obstacles[i].setFront(obs_data[i]['front'])
 
-	def render(self, depth=False, trajectory=False):
+	def render(self, vision=False, trajectory=False):
 		for i in range(self.obstacle_count):
 			self.obstacles[i].render()
 
-		self.agents[0].render(depth, trajectory, 0)
+		self.agents[0].render(vision, trajectory, 0)
 		for i in range(1, self.agent_count):
 			self.agents[i].render(False, trajectory, i)
 

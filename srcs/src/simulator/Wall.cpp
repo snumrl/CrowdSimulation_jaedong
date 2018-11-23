@@ -14,6 +14,10 @@ Wall::Wall()
 {
 }
 
+Wall::~Wall()
+{
+}
+
 Wall::Wall(double* u, double* p, double l, double* normal)
 {
 	_st[0] = u[0];
@@ -38,7 +42,9 @@ Wall::Wall(double* u, double* p, double l, double* normal)
 	_q[1] = _p[0];
 }
 
-Wall::~Wall()
-{
-}
 
+
+void Wall::getData(double* _data)
+{
+
+}

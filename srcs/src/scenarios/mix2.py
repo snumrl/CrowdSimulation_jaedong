@@ -13,9 +13,9 @@ import queue
 import copy
 import math
 
-class Corridor:
+class Mix2:
 	def __init__(self, obs):
-		self.name = 'Corridor'
+		self.name = 'Mix2'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
 		self.init_walls();
@@ -58,7 +58,6 @@ class Corridor:
 
 	def setObjectData(self, obs):
 		agent_data = obs['agent']
-		self.agent_num = len(obs['agent'])
 		for i in range(self.agent_count):
 			self.agents[i].setP(agent_data[i]['p'])
 			self.agents[i].setQ(agent_data[i]['q'])
@@ -67,20 +66,10 @@ class Corridor:
 			self.agents[i].setDmap(agent_data[i]['d_map'])
 			self.agents[i].setColor(agent_data[i]['color'])
 			self.agents[i].trajectory.append(agent_data[i]['p'])
-			self.agents[i].trajectory_q.append(agent_data[i]['q'])
 
 		obs_data = obs['obstacle']
 		for i in range(self.obstacle_count):
 			self.obstacles[i].setP(obs_data[i]['p'])
-
-	def coord(self, frame):
-		f = open("coord", 'w')
-		f.write("agent 10")
-		for i in range(frame):
-			for j in range(10):
-				f.write(self.record_agent_p[i][j][0] + "," + self.record_agent_p[i][j][1] + "," + self.record_agent_q[i][j][0] + "," + self.record_agent_q[i][j][1])
-
-		f.close()
 
 	def render(self, depth=False, trajectory=False):
 		for i in range(self.obstacle_count):
@@ -93,16 +82,41 @@ class Corridor:
 		glColor3f(0.2, 0.2, 0.25)
 
 		glPushMatrix()
-		glTranslatef(0, 17.5, 0.5)
-		glScalef(60, 5.0, 1.0)
+		glTranslatef(-25.0, 15.0, 0.5)
+		glScalef(10.0, 10.0, 1.0)
 		glutSolidCube(1.0)
 		glPopMatrix()
 
 		glPushMatrix()
-		glTranslatef(0, -17.5, 0.5)
-		glScalef(60, 5.0, 1.0)
+		glTranslatef(-25.0, -15.0, 0.5)
+		glScalef(10.0, 10.0, 1.0)
 		glutSolidCube(1.0)
 		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(25.0, 15.0, 0.5)
+		glScalef(10.0, 10.0, 1.0)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(25.0, -15.0, 0.5)
+		glScalef(10.0, 10.0, 1.0)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(0.0, 15.0, 0.5)
+		glScalef(5.0, 10.0, 1.0)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
+		glPushMatrix()
+		glTranslatef(0.0, -15.0, 0.5)
+		glScalef(5.0, 10.0, 1.0)
+		glutSolidCube(1.0)
+		glPopMatrix()
+
 
 	def record(self, flag=False):
 		if flag:
@@ -137,7 +151,6 @@ class Corridor:
 
 	def render_record(self, frame):
 		frame = frame % self.record_size
-
 		for i in range(self.agent_count):
 			self.agents[i].setP(self.record_agent_p[frame][i])
 			self.agents[i].setQ(self.record_agent_q[frame][i])
@@ -146,5 +159,3 @@ class Corridor:
 			self.obstacles[i].setP(self.record_obs_p[i])
 
 		self.render()
-
-

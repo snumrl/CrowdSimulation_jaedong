@@ -16,6 +16,8 @@ class Wall{
 		Wall(double* st, double* p, double l, double* n);
 		~Wall();
 
+		void getData(double* _data);
+
 		void setSt(double* st) {_st[0] = st[0]; _st[1] = st[1];};
 		void setEd(double* ed) {_ed[0] = ed[0]; _ed[1] = ed[1];};
 		void setU(double* u) {_u[0] = u[0]; _u[1] = u[1];};

@@ -1,18 +1,17 @@
 cmake_minimum_required(VERSION 3.5)
 project(csim)
-
+set(CMAKE_MODULE_PATH "${CMAKE_HOME_DIRECTORY}/cmake_module")
 add_compile_options(-std=c++11)
 
-find_package(Boost 1.58.0 COMPONENTS filesystem regex python)
-find_package(PythonInterp)
-find_package(PythonLibs)
+find_package(Boost 1.67.0 COMPONENTS python35 numpy35)
+find_package(Python3 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
-file(GLOB srcs "srcs/src/simulator/*.cpp" "srcs/src/simulator/*.h" "srcs/src/simulator/scenario/*.cpp" "srcs/src/simulator/scenario/*.h")
+file(GLOB srcs "srcs/src/simulator/*.cpp" "srcs/src/simulator/*.h" "srcs/src/simulator/scenarios/*.cpp" "srcs/src/simulator/scenarios/*.h")
 
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(${PYTHON3_INCLUDE_DIR})
 include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIR})
 
 include(FindOpenMP)
@@ -24,6 +23,6 @@ endif()
 
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/srcs/src)
 add_library(csim SHARED ${srcs})
-target_link_libraries(csim ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
+target_link_libraries(csim ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} ${PYTHON3_LIBRARIES} ${GLUT_LIBRARIES})
 set_target_properties(csim PROPERTIES PREFIX "" )
 

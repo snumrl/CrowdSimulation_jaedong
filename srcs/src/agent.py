@@ -14,125 +14,82 @@ import math
 import copy
 import random
 
-def drawTriangle(p_x, p_y, p_z):
-	glBegin(GL_TRIANGLES)
-	glVertex3f( p_x,  p_y, p_z)
-	glVertex3f( p_y, -p_x, p_z)
-	glVertex3f(-p_y,  p_x, p_z)
-	glEnd()
-
-def drawQuad(p_x, p_y, p_z):
-	glBegin(GL_QUADS)
-	glVertex3f( p_x,  p_y, p_z)
-	glVertex3f( p_y, -p_x, p_z)
-	glVertex3f(-p_y,  p_x, p_z)
-	glEnd()
-
 class Agent(CrowdObject):
 	def __init__(self, state, color='RED'):
-		self.reset(state, color)
+		self.reset(state)
 
 	def getState(self):
 		state = {}
+		state['r'] = self.r
 		state['p'] = self.p
 		state['q'] = self.q
 		state['d'] = self.d
-		state['v'] = self.v
-		state['r'] = self.r
-		state['fov'] = self.agent_fov
 		state['color'] = self.color
 		state['front'] = self.front
-		state['q_lim'] = self.q_lim
-		state['d_map'] = self.d_map
-		state['v_map'] = self.v_map
-		state['interval'] = self.interval
-		state['v_depth'] = self.vision_depth
+		state['vision'] = self.vision
+		state['offset'] = self.offset
 
 		return copy.copy(state)
 
-	def depthMap(self):
-		return self.d_map
+	def setR(self, r = None):
+		if r is None:
+			r = [0.5, 0.5]
+		self.r = np.array(r, dtype=float)
 
 	def setP(self, p = None):
 		if p is None:
 			p = [-200, 0]
 		self.p = np.array(p, dtype=float)
 
-	def setQ(self, q = None):
-		if q is None:
-			q = [0, 0]
-		self.q = np.array(q, dtype=float)
-
 	def setD(self, d = None):
 		if d is None:
 			d = [0, 0]
 		self.d = np.array(d, dtype=float)
 
-	def setFront(self, f = None):
-		if f is None:
-			f = 0.0
-		self.front = np.array(f, dtype=float)
-
-	def setDmap(self, d_map = None):
-		self.d_map = np.array(d_map, dtype=float)
-
-	def setVmap(self, d_map = None):
-		self.v_map = np.array(v_map, dtype=float)
-
 	def setColor(self, color = None):
 		self.color = np.array(color, dtype=float)
 
-	def reset(self, state, shape='CIRCLE'):
+	def setFront(self, f = None):
+		if f is None:
+			f = 0.0
+
+		self.front = f
+
+	def setVision(self, v = None):
+		if v is None:
+			v = np.ndarray(shape=(3, 41))
+			v.fill(0)
+
+		self.vision = v
+
+	def setOffset(self, o = None):
+		if o is None:
+			o = np.ndarray(shape=(41))
+			o.fill(0)
+
+		self.offset = o
+
+	def reset(self, state):
+		self.r = state['r']
 		self.p = state['p']
-		self.q = state['q']
 		self.d = state['d']
-		self.v = state['v']
 		self.color = state['color']
 		self.front = state['front']
-		self.v_map = state['v_map']
-		self.d_map = state['d_map']
+		self.offset = state['offset']
+		self.setVision(state['vision'])
 
-		self.r = cst.AGENT_RADIUS
-		self.interval = cst.AGENT_SENSOR_INTERVAL
-		self.agent_fov = cst.AGENT_FOV
-		self.vision_depth = cst.VISION_DEPTH
-		self.q_lim = cst.AGENT_SENSOR_DIMENSION
-		self.q_val = np.ndarray(shape=(self.q_lim))
 		self.trajectory = []
 		self.trajectory_q = []
 
-	def setView(self, new_d_map):
-		self.d_map = new_d_map
-
-	def render(self, depth=False, trajectory_=False, idx=0):
+	def render(self, vision=False, trajectory_=False, idx=0):
 		#render Agent
 		glPushMatrix()
-		self.render_agent(idx)
-		if depth:
-			self.render_depth_map()
+		self.render_agent(idx, vision)
 		glPopMatrix()
 
 		if trajectory_:
 			glLineWidth(4.0)
-			# glColor3f(self.color[0],self.color[1],self.color[2])
-			# glColor3f(0.2, 1.0, 0.2)
-			if idx%8==0:
-				glColor3f(1.0, 0.0,0.0)
-			elif idx%8==1:
-				glColor3f(0.0, 1.0,0.0)
-			elif idx%8==2:
-				glColor3f(1.0, 1.0,0.0)
-			elif idx%8==3:
-				glColor3f(1.0, 0.0,1.0)
-			elif idx%8==4:
-				glColor3f(0.0, 1.0,1.0)
-			elif idx%8==5:
-				glColor3f(0.5, 0.5,0.0)
-			elif idx%8==6:
-				glColor3f(0.4, 0.6,0.0)
-			elif idx%8==7:
-				glColor3f(0.3, 0.7,0.0)
-
+			glColor3f(self.color[0],self.color[1],self.color[2])
 			glBegin(GL_LINES)
 			l = len(self.trajectory)
 
@@ -140,39 +97,31 @@ class Agent(CrowdObject):
 				glVertex3f(self.trajectory[i][0], self.trajectory[i][1], 0.5)
 			glEnd()
 
+
 		self.render_destination()
 
-	def render_agent(self, idx):
+	def render_agent(self, idx, vision):
 		# render agent
-
-		glColor3f(self.color[0],self.color[1],self.color[2])
-		glTranslatef(self.p[0], self.p[1], 1)
-		quad = gluNewQuadric()
-		gluSphere(quad, self.r, 50, 50)
-		# gluCylinder(quad, self.r, self.r, 40, 50, 50)
-
-		#render Triangle of Agent
-		glColor3f(0.3, 0.3, 1.0)
 		glPushMatrix()
-		# glTranslatef(8.0*self.q[0], 8.0*self.q[1], 0.0)
+		glTranslatef(self.p[0], self.p[1], 1)
+		glRotatef(mMath.RadianToDegree(self.front)-90, 0, 0, 1)
 
-		len_ = np.linalg.norm(self.q)
-		cur_x = self.q[0]*self.r/len_*0.8
-		cur_y = self.q[1]*self.r/len_*0.8
+		if vision and idx == 0:
+			self.render_vision()
 
-		drawTriangle(cur_x, cur_y, 1.0)
+		# agent
+		glScalef(self.r[0], self.r[1], 1.0)
+		glColor3f(self.color[0],self.color[1],self.color[2])
+		quad = gluNewQuadric()
+		gluSphere(quad, 1.0, 50, 50)
 
-		# glColor3f(1, 0, 0)
-		# glBegin(GL_LINES)
-		# glVertex3f(0, 0, 0)
-		# glVertex3f(self.q[0]*300, self.q[1]*300, 0)
-		# glEnd()
-
-		# glColor3f(0, 1, 0)
-		# glBegin(GL_LINES)
-		# glVertex3f(0, 0, 0)
-		# glVertex3f(self.q[1]*-300, self.q[0]*300, 0)
-		# glEnd()
+		# direction triangle
+		glColor3f(0.3, 0.3, 1.0)
+		glBegin(GL_TRIANGLES)
+		glVertex3f( 0.9, 0.0, 2.0)
+		glVertex3f( 0.0, 0.9, 2.0)
+		glVertex3f(-0.9, 0.0, 2.0)
+		glEnd()
 
 		glPopMatrix()
 
@@ -184,14 +133,28 @@ class Agent(CrowdObject):
 		gluSphere(quad, 0.3, 50, 50)
 		glPopMatrix()
 
-	def render_depth_map(self):
+	def render_vision(self):
 		glLineWidth(2)
-		for i in range(self.q_lim):
-			angle = self.front + math.radians(self.agent_fov/2 - self.interval*i)
+		glColor3f(0.0, 0.0, 1.0)
+		# print("offset : ", self.offset)
+		# print("vision 0 : ", self.vision[0])
+		# print("vision 1 : ", self.vision[1])
+		# print("vision 2 : ", self.vision[2])
+		for i in range(45):
+			angle = mMath.DegreeToRadian((i+0.5)*8.0 - 180.0 + 90.0)
 			glBegin(GL_LINES)
-			glVertex3f(self.r*math.cos(angle), self.r*math.sin(angle), 0)
-			glVertex3f((self.d_map[i]+self.r)*math.cos(angle), (self.d_map[i]+self.r)* math.sin(angle), 0)
+			glVertex3f(self.offset[i]*math.cos(angle), self.offset[i]*math.sin(angle), 0)
+			glVertex3f((self.offset[i]+10.0*self.vision[i])*math.cos(angle), (self.offset[i]+10.0*self.vision[i])*math.sin(angle), 0)
 			glEnd()
+
+	# def render_depth_map(self):
+	# 	glLineWidth(2)
+	# 	for i in range(self.q_lim):
+	# 		angle = self.front + math.radians(self.agent_fov/2 - self.interval*i)
+			# glBegin(GL_LINES)
+			# glVertex3f(self.r*math.cos(angle), self.r*math.sin(angle), 0)
+			# glVertex3f((self.d_map[i]+self.r)*math.cos(angle), (self.d_map[i]+self.r)* math.sin(angle), 0)
+			# glEnd()
 
 class Obstacle(CrowdObject):
 	def __init__(self, state):
@@ -199,8 +162,8 @@ class Obstacle(CrowdObject):
 
 	def reset(self, state):
 		self.p = state['p']
-
-		self.r = cst.OBSTACLE_RADIUS
+		self.r = state['r']
+		self.front = state['front']
 
 	def setP(self, p = None):
 		if p is None:
@@ -208,10 +171,23 @@ class Obstacle(CrowdObject):
 
 		self.p = np.array(p, dtype=float)
 
+	def setR(self, r = None):
+		if r is None:
+			r = [0.5, 0.5]
+
+		self.r = np.array(r, dtype=float)
+
+	def setFront(self, f = None):
+		if f is None:
+			f = 0.0
+
+		self.front = f
+
 	def getState(self):
 		state = {}
 		state['p'] = self.p
 		state['r'] = self.r
+		state['front'] = self.front
 		return copy.deepcopy(state)
 
 	def action(self, action):
@@ -222,8 +198,11 @@ class Obstacle(CrowdObject):
 		glPushMatrix()
 		glColor3f(0.2, 0.2, 0.25)
 		glTranslatef(self.p[0], self.p[1], 0)
+		glRotatef(mMath.RadianToDegree(self.front)-90, 0, 0, 1)
+		glScalef(self.r[0], self.r[1], 1.0)
+
 		quad = gluNewQuadric()
-		gluSphere(quad, self.r, 50, 50)
+		gluSphere(quad, 1.0, 50, 50)
 		glPopMatrix()
 
 #Rectangle Form

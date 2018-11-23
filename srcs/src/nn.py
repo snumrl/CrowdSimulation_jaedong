@@ -40,34 +40,38 @@ class ActorNetwork():
 		# Combine the gradients here
 		self.unnormalized_actor_gradients = tf.gradients(
 			self.out, self.network_params, -self.action_gradient)
-		self.actor_gradients = list(map(lambda x: x if x is None else tf.div(x, self.batch_size), self.unnormalized_actor_gradients))
+		self.actor_gradients = list([x if x is None else tf.div(x, self.batch_size) for x in self.unnormalized_actor_gradients])
 
 		# Optimization Op
 		self.optimize = tf.train.AdamOptimizer(self.learning_rate).\
-			apply_gradients(zip(self.actor_gradients, self.network_params))
+			apply_gradients(list(zip(self.actor_gradients, self.network_params)))
 
 		self.num_trainable_vars = len(
 			self.network_params) + len(self.target_network_params)
 
-		self.saver = tf.train.Saver()
+		self.saver = tf.train.Saver(max_to_keep=None)
 
 	def create_actor_network(self):
-		input_body = tflearn.input_data(shape=[None, self.body_dim])
-		input_sensor = tflearn.input_data(shape=[None, self.sensor_dim])
+		input_body = tflearn.input_data(shape=[None, 5])
+		# input_sensor = tflearn.input_data(shape=[None, 3, 41, 1])
+		input_sensor = tflearn.input_data(shape=[None, 45])
 
-		body_net = tflearn.fully_connected(input_body, 32)
-		body_net = tflearn.layers.normalization.batch_normalization(body_net)
-		body_net = tflearn.activations.elu(body_net)
-		body_net = tflearn.fully_connected(body_net, 16)
+		body_net = tflearn.fully_connected(input_body, 64)
 		body_net = tflearn.layers.normalization.batch_normalization(body_net)
 		body_net = tflearn.activations.elu(body_net)
 
 		sensor_net = tflearn.fully_connected(input_sensor, 64)
 		sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
 		sensor_net = tflearn.activations.elu(sensor_net)
-		sensor_net = tflearn.fully_connected(sensor_net, 32)
+		sensor_net = tflearn.fully_connected(input_sensor, 32)
 		sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
 		sensor_net = tflearn.activations.elu(sensor_net)
+
+		# sensor_net = tf.transpose(input_sensor, [0,1,2,3])
+		# sensor_net = tflearn.conv_2d(sensor_net, 32, [3,5], strides=1, activation='elu')
+		# sensor_net = tflearn.fully_connected(sensor_net, 32)
+		# sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
+		# sensor_net = tflearn.activations.elu(sensor_net)
 
 		t1 = tflearn.fully_connected(body_net, 32)
 		t2 = tflearn.fully_connected(sensor_net, 32)
@@ -75,10 +79,37 @@ class ActorNetwork():
 		net = tflearn.activation(
 			tf.matmul(body_net, t1.W) + tf.matmul(sensor_net, t2.W) + t2.b, activation='elu')
 
-		# w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
-		w_init = tflearn.initializations.xavier(uniform=True, seed=None, dtype=tf.float32)
+		w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
 		out = tflearn.fully_connected(
 			net, self.a_dim, activation='tanh', weights_init=w_init)
+
+		# input_body = tflearn.input_data(shape=[None, self.body_dim])
+		# input_sensor = tflearn.input_data(shape=[None, self.sensor_dim])
+
+		# body_net = tflearn.fully_connected(input_body, 32)
+		# body_net = tflearn.layers.normalization.batch_normalization(body_net)
+		# body_net = tflearn.activations.elu(body_net)
+		# body_net = tflearn.fully_connected(body_net, 16)
+		# body_net = tflearn.layers.normalization.batch_normalization(body_net)
+		# body_net = tflearn.activations.elu(body_net)
+
+		# sensor_net = tflearn.fully_connected(input_sensor, 64)
+		# sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
+		# sensor_net = tflearn.activations.elu(sensor_net)
+		# sensor_net = tflearn.fully_connected(sensor_net, 32)
+		# sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
+		# sensor_net = tflearn.activations.elu(sensor_net)
+
+		# t1 = tflearn.fully_connected(body_net, 32)
+		# t2 = tflearn.fully_connected(sensor_net, 32)
+
+		# net = tflearn.activation(
+		# 	tf.matmul(body_net, t1.W) + tf.matmul(sensor_net, t2.W) + t2.b, activation='elu')
+
+		# # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
+		# w_init = tflearn.initializations.xavier(uniform=True, seed=None, dtype=tf.float32)
+		# out = tflearn.fully_connected(
+		# 	net, self.a_dim, activation='tanh', weights_init=w_init)
 
 		return input_body, input_sensor, out
 
@@ -109,12 +140,12 @@ class ActorNetwork():
 
 	def save(self, ckpt_dir, ckpt_time):
 		ckptname = ckpt_dir+"Actor Network_"+ckpt_time
-		print ckptname
+		print(ckptname)
 		self.saver.save(self.sess, ckptname)
 
 	def load(self, ckpt_dir):
 		ckptname = tf.train.latest_checkpoint(ckpt_dir)
-		print ckptname
+		print(ckptname)
 		self.saver.restore(self.sess, ckptname)
 
 
@@ -162,26 +193,31 @@ class CriticNetwork():
 		# w.r.t. that action. Each output is independent of all
 		# actions except for one.
 		self.action_grads = tf.gradients(self.out, self.action)
-		self.saver = tf.train.Saver()
+		self.saver = tf.train.Saver(max_to_keep=None)
 
 	def create_critic_network(self):
-		input_body = tflearn.input_data(shape=[None, self.body_dim])
-		input_sensor = tflearn.input_data(shape=[None, self.sensor_dim])
+		input_body = tflearn.input_data(shape=[None, 5])
+		# input_sensor = tflearn.input_data(shape=[None, 3, 41, 1])
+		input_sensor = tflearn.input_data(shape=[None, 45])
+
 		action = tflearn.input_data(shape=[None, self.a_dim])
 
-		body_net = tflearn.fully_connected(input_body, 32)
-		body_net = tflearn.layers.normalization.batch_normalization(body_net)
-		body_net = tflearn.activations.elu(body_net)
-		body_net = tflearn.fully_connected(body_net, 16)
+		body_net = tflearn.fully_connected(input_body, 64)
 		body_net = tflearn.layers.normalization.batch_normalization(body_net)
 		body_net = tflearn.activations.elu(body_net)
 
 		sensor_net = tflearn.fully_connected(input_sensor, 64)
 		sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
 		sensor_net = tflearn.activations.elu(sensor_net)
-		sensor_net = tflearn.fully_connected(sensor_net, 32)
+		sensor_net = tflearn.fully_connected(input_sensor, 32)
 		sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
 		sensor_net = tflearn.activations.elu(sensor_net)
+
+		# sensor_net = tf.transpose(input_sensor, [0, 1, 2, 3])
+		# sensor_net = tflearn.conv_2d(sensor_net, 32, [3,5], strides=1, activation='elu')
+		# sensor_net = tflearn.fully_connected(sensor_net, 32)
+		# sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
+		# sensor_net = tflearn.activations.elu(sensor_net)
 
 		t1 = tflearn.fully_connected(body_net, 32)
 		t2 = tflearn.fully_connected(sensor_net, 32)
@@ -190,9 +226,36 @@ class CriticNetwork():
 		net = tflearn.activation(
 			tf.matmul(body_net, t1.W) + tf.matmul(sensor_net, t2.W) + tf.matmul(action, t3.W) + t3.b, activation='elu')
 
-		# w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
-		w_init = tflearn.initializations.xavier(uniform=True, seed=None, dtype=tf.float32)
+		w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
 		out = tflearn.fully_connected(net, 1, weights_init=w_init)
+		# input_body = tflearn.input_data(shape=[None, self.body_dim])
+		# input_sensor = tflearn.input_data(shape=[None, self.sensor_dim])
+		# action = tflearn.input_data(shape=[None, self.a_dim])
+
+		# body_net = tflearn.fully_connected(input_body, 32)
+		# body_net = tflearn.layers.normalization.batch_normalization(body_net)
+		# body_net = tflearn.activations.elu(body_net)
+		# body_net = tflearn.fully_connected(body_net, 16)
+		# body_net = tflearn.layers.normalization.batch_normalization(body_net)
+		# body_net = tflearn.activations.elu(body_net)
+
+		# sensor_net = tflearn.fully_connected(input_sensor, 64)
+		# sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
+		# sensor_net = tflearn.activations.elu(sensor_net)
+		# sensor_net = tflearn.fully_connected(sensor_net, 32)
+		# sensor_net = tflearn.layers.normalization.batch_normalization(sensor_net)
+		# sensor_net = tflearn.activations.elu(sensor_net)
+
+		# t1 = tflearn.fully_connected(body_net, 32)
+		# t2 = tflearn.fully_connected(sensor_net, 32)
+		# t3 = tflearn.fully_connected(action, 32)
+
+		# net = tflearn.activation(
+		# 	tf.matmul(body_net, t1.W) + tf.matmul(sensor_net, t2.W) + tf.matmul(action, t3.W) + t3.b, activation='elu')
+
+		# # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
+		# w_init = tflearn.initializations.xavier(uniform=True, seed=None, dtype=tf.float32)
+		# out = tflearn.fully_connected(net, 1, weights_init=w_init)
 
 		return input_body, input_sensor, action, out
 
@@ -230,10 +293,10 @@ class CriticNetwork():
 
 	def save(self, ckpt_dir, ckpt_time):
 		ckptname = ckpt_dir+"Critic Network_"+ckpt_time
-		print ckptname
+		print(ckptname)
 		self.saver.save(self.sess, ckptname)
 
 	def load(self, ckpt_dir):
 		ckptname = tf.train.latest_checkpoint(ckpt_dir)
-		print ckptname
+		print(ckptname)
 		self.saver.restore(self.sess, ckptname)

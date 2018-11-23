@@ -10,6 +10,12 @@ def RadianToCoor(rad):
 	coor = np.array([np.cos(rad), np.sin(rad)])
 	return coor
 
+def RadianToDegree(rad):
+	return rad/3.141592*180.0
+
+def DegreeToRadian(degree):
+	return degree/180.0*3.141592
+
 def CoorToAngle(coor):
 	angle = np.arctan2(coor[1], coor[0])*180.0 / np.pi
 	return angle

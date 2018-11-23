@@ -1,16 +1,21 @@
 #include <iostream>
 #include <math.h>
 #include <omp.h>
+#include <ctime>
 #include "mMath.h"
 #include "Env.h"
 
 using namespace std;
 
 #define PI 3.141592
-#define w_v -4.0
-#define w_w -1.0
-#define w_col -3.0
-#define w_target -4.0
+
+#define w_target -20.0
+#define w_col -80.0
+#define w_smooth_a -0.5
+#define w_smooth_w -0.5
+#define w_pref_v -2.0
+
+#define w_bubble -0.0
 
 Env::Env()
 {
@@ -29,248 +34,81 @@ const vector<Agent*> & Env::Observe()
 	{
 		Agent* cur_agent;
 		cur_agent = _agents.at(i);
-		double* d_map = cur_agent->getDmap();
-		double* v_map = cur_agent->getVmap();
-
-		#pragma omp parallel for
-		for(int j=0; j<20; j++)
+		for(int j=0; j<agent_num; j++)
 		{
-			double cur_radian;
-			double angle_v[2];
-			double tmp_map[3];
+			if(i==j)
+				continue;
 
-			tmp_map[0] = _vision_depth;
-			tmp_map[1] = 0.0;
-			tmp_map[2] = 0.0;
-			cur_radian = cur_agent->getFront() + (cur_agent->getFov()/2 - j*cur_agent->getInterval())/180.0*PI;
-			RadianToCoor(cur_radian, angle_v);
-			depth_by_agents(angle_v, cur_agent, tmp_map, i);
-			depth_by_obstacles(angle_v, cur_agent, tmp_map);
-			depth_by_walls(angle_v, cur_agent, tmp_map, i);
+			Agent* other_agent;
+			other_agent = _agents.at(j);
 
-			d_map[j] = tmp_map[0];
-			v_map[2*j] = tmp_map[1];
-			v_map[2*j+1] = tmp_map[2];
-
+			double other_data[9];
+			other_agent->getData(other_data);
+			cur_agent->setVision(other_data);
 		}
+
+		for(int j=0; j<obstacle_num; j++)
+		{
+			Obstacle* obs;
+			obs = _obstacles.at(j);
+
+			double obs_data[5];
+			obs->getData(obs_data);
+			cur_agent->setVision(obs_data);
+		}
+
+		// for(int j=0; j<wall_num; j++)
+		// {
+		// 	Wall* wall;
+		// 	wall = _walls.at(j);
+
+		// 	cur_agent->setVisionWall(wall);
+		// }
 	}
 
 	return _agents;
 }
 
-void Env::depth_by_obstacles(double* angle, Agent* agent, double* _map)
-{
-	double cur_d = _map[0];
-	double cur_v[2];
-	cur_v[0] = _map[1];
-	cur_v[1] = _map[2];
-
-	Obstacle* cur_obs;
-	for(int i=0; i<obstacle_num; i++)
-	{
-		cur_obs = _obstacles.at(i);
-		double d = Dist(agent->getP(), cur_obs->getP());
-		double r = agent->getR() + cur_obs->getR();
-		if(d - r > agent->getDepth())
-			continue;
-
-		double cur_dist = RayToSphereDistance(agent->getP(), cur_obs->getP(), angle, r);
-
-		if(cur_dist > 0 && cur_dist < cur_d)
-		{
-			cur_d = cur_dist;
-			double* _q = agent->getQ();
-			cur_v[0] = -1*agent->getV()*_q[0];
-			cur_v[1] = -1*agent->getV()*_q[1];
-			Rotate2d(_q[0], _q[1], cur_v);
-		}
-	}
-
-	_map[0] = cur_d;
-	_map[1] = cur_v[0];
-	_map[2] = cur_v[1];
-}
-
-void Env::depth_by_agents(double* angle, Agent* agent,  double* _map, int idx)
-{
-	double cur_d = _map[0];
-	double cur_v[2];
-	cur_v[0] = _map[1];
-	cur_v[1] = _map[2];
-
-	Agent* cur_agent;
-	for(int i=0; i<agent_num; i++)
-	{
-		if(i == idx)
-			continue;
-
-		cur_agent = _agents.at(i);
-		double d = Dist(agent->getP(), cur_agent->getP());
-		double r = agent->getR() + cur_agent->getR();
-		if(d - r > agent->getDepth())
-			continue;
-
-		double cur_dist = RayToSphereDistance(agent->getP(), cur_agent->getP(), angle, r);
-
-		if(cur_dist >= 0 && cur_dist < cur_d)
-		{
-			cur_d = cur_dist;
-			double* _q = agent->getQ();
-			double* _q_cur = cur_agent->getQ();
-			cur_v[0] = cur_agent->getV()*_q_cur[0] - agent->getV()*_q[0];
-			cur_v[1] = cur_agent->getV()*_q_cur[1] - agent->getV()*_q[1];
-			Rotate2d(_q[0], _q[1], cur_v);
-		}
-	}
-
-	_map[0] = cur_d;
-	_map[1] = cur_v[0];
-	_map[2] = cur_v[1];
-}
-
-void Env::depth_by_walls(double* angle, Agent* agent, double* _map, int idx)
-{
-	bool isNew = false;
-
-	double cur_d = _map[0];
-	double cur_v[2] = {_map[1], _map[2]};
-	double vision_depth = agent->getDepth();
-
-	Wall* cur_wall;
-	double offset[2];
-	double* agent_pos = agent->getP();
-	for(int i=0; i<wall_num; i++)
-	{
-		cur_wall = _walls.at(i);
-
-		MinWallOffset(cur_wall, agent, offset);
-
-		double wall_st[2];
-		double wall_ed[2];
-		vec_add_vec(cur_wall->getSt(), offset, wall_st);
-		vec_add_vec(cur_wall->getEd(), offset, wall_ed);
-
-		double L1[3];
-		Line(wall_st, wall_ed, L1);
-
-		double L2[3];
-		double agent_ray[2];
-		vec_add_scalar_vec(agent_pos, vision_depth, angle, agent_ray);
-		Line(agent_pos, agent_ray, L2);
-
-		double R[3];
-		LineIntersenction(L1, L2, R);
-		if(R[2])
-		{
-			double tmp_R[2] = {R[0], R[1]};
-
-			double tmp_st_R[2];
-			vec_sub_vec(wall_st, tmp_R, tmp_st_R);
-			double l0_st = vec_norm(tmp_st_R);
-
-			vec_sub_vec(wall_ed, tmp_R, tmp_st_R);
-			double l0_ed = vec_norm(tmp_st_R);
-
-			double tmp_p_R[2];
-			vec_sub_vec(agent_pos, tmp_R, tmp_p_R);
-			double l1_st = vec_norm(tmp_p_R);
-
-			double tmp_ray[2];
-			vec_add_scalar_vec(agent_pos, vision_depth, angle, tmp_ray);
-			double tmp_ray_R[2];
-			vec_sub_vec(tmp_ray, tmp_R, tmp_ray_R);
-			double l1_ed = vec_norm(tmp_ray_R);
-
-			double wall_l = cur_wall->getL();
-			if(l0_st <= wall_l && l0_ed <= wall_l && l1_st <= vision_depth && l1_ed <= vision_depth)
-			{
-				double tmp_depth_vec[2];
-				vec_sub_vec(agent_pos, tmp_R, tmp_depth_vec);
-				double tmp_depth = vec_norm(tmp_depth_vec);
-				if(tmp_depth < cur_d)
-				{
-					cur_d = tmp_depth;
-					isNew = true;
-				}
-			}
-		}
-
-		double boundary = agent->getR();
-		double cur_dist = RayToSphereDistance(agent_pos, cur_wall->getSt(), angle, boundary);
-
-		if(cur_dist >= 0 && cur_dist < cur_d)
-		{
-			cur_d = cur_dist;
-			isNew = true;
-		}
-
-		cur_dist = RayToSphereDistance(agent_pos, cur_wall->getEd(), angle, boundary);
-
-		if(cur_dist >= 0 && cur_dist < cur_d)
-		{
-			cur_d = cur_dist;
-			isNew = true;
-		}
-	}
-
-	if(isNew)
-	{
-		double* _q = agent->getQ();
-		cur_v[0] = -1 * agent->getV() * _q[0];
-		cur_v[1] = -1 * agent->getV() * _q[1];
-		Rotate2d(_q[0], _q[1], cur_v);
-	}
-
-	_map[0] = cur_d;
-	_map[1] = cur_v[0];
-	_map[2] = cur_v[1];
-}
-
 void Env::Update()
 {
-	double prev_score = getScore();
-	for(int i=0; i<agent_num; i++)
-		_agents.at(i)->Action();
+	srand((unsigned int)time(0));
 
-	double cur_v = _agents.at(0)->getV();
-	double cur_w = _agents.at(0)->getV();
-	double smooth_v = 0.0;
-	double smooth_w = 0.0;
+	double prev_score = getTargetScore();
+	double smooth_score = getSmoothScore(_agents.at(0));
+	double prefV_score = getPrefVScore(_agents.at(0));
+	// double bubble_score = getBubbleScore(_agents.at(0));
 
-	if(cur_v > 0.6)
-		smooth_v = w_v * (cur_v - 0.6) * (cur_v - 0.6);
-	if(cur_v < -0.84)
-		smooth_v = w_v * (cur_v + 0.84) * (cur_v + 0.84);
-	if(cur_w > 0.1)
-		smooth_w = w_w * (cur_w - 0.1) * (cur_w - 0.1);
-	if(cur_w < -0.1)
-		smooth_w = w_w * (cur_w + 0.1) * (cur_w + 0.1);
+	Agent* agent_;
+	for(int i=0; i<agent_num; i++){
+		agent_ = _agents.at(i);
+		agent_->Action();
+		agent_->visionReset();
+		// if(Dist(agent_->getP(), agent_->getD()) < 4.0)
+		// 	agent_->setD( -30 + rand()%60, -20 + rand()%40);
+	}
 
-	double score_smooth = smooth_v + smooth_w;
+	double next_score = getTargetScore();
+	double target_score = next_score - prev_score;
 
-	_agents.at(0)->setCol(false);
 	for(int i=0; i<agent_num; i++)
 	{
 		Agent* cur_agent;
 		cur_agent = _agents.at(i);
+		cur_agent->setCol(false);
 
 		bool isCol = false;
 		#pragma omp parallel for
-		for(int j=0; j<agent_num; j++)
+		for(int j=i+1; j<agent_num; j++)
 		{
-			if(i!=j)
-			{
-				Agent* other_agent;
-				other_agent = _agents.at(j);
+			Agent* other_agent;
+			other_agent = _agents.at(j);
+			double other_data[9];
+			other_agent->getData(other_data);
 
-				double d = Dist(cur_agent->getP(), other_agent->getP());
-				double r = cur_agent->getR() + other_agent->getR();
-				if(d < r)
-				{
-					isCol = true;
-					cur_agent->Revert(other_agent->getP(), true);
-					other_agent->Revert(cur_agent->getP(), true);
-				}
+			if(cur_agent->colCheck(other_data)){
+				isCol = true;
+				cur_agent->Revert(other_agent->getP(), true);
+				other_agent->Revert(cur_agent->getP(), true);
 			}
 		}
 
@@ -279,11 +117,10 @@ void Env::Update()
 		{
 			Obstacle* cur_obs;
 			cur_obs = _obstacles.at(j);
+			double obs_data[9];
+			cur_obs->getData(obs_data);
 
-			double d = Dist(cur_agent->getP(), cur_obs->getP());
-			double r = cur_agent->getR() + cur_obs->getR();
-			if(d < r)
-			{
+			if(cur_agent->colCheck(obs_data)){
 				isCol = true;
 				cur_agent->Revert(cur_obs->getP(), true);
 			}
@@ -296,7 +133,7 @@ void Env::Update()
 			Wall* cur_wall;
 			cur_wall = _walls.at(j);
 
-			if(LineSphereIntersection(cur_wall->getU(), cur_wall->getP(), cur_wall->getL(), cur_agent->getP(), cur_agent->getR()))
+			if(LineSphereIntersection(cur_wall->getU(), cur_wall->getP(), cur_wall->getL(), cur_agent->getP(), (cur_agent->getR())[0]))
 			{
 				isCol = true;
 				cur_agent->Revert(cur_wall->getSt(), false);
@@ -307,22 +144,25 @@ void Env::Update()
 			cur_agent->setCol(true);
 	}
 
-	double next_score = getScore();
-	double score_target = next_score - prev_score;
-
-	double score = score_target + score_smooth;
-
+	double col_score = 0;
 	if(_agents.at(0)->getCol())
-		score = w_col;
+		col_score = w_col;
+
+	_reward_sep[0] = target_score;
+	_reward_sep[1] = prefV_score;
+	_reward_sep[2] = smooth_score;
+	_reward_sep[3] = col_score;
+
+	double score = target_score + prefV_score + smooth_score + col_score;
 
 	_reward = score;
-
-	_cur_step += 1;
 }
 
-void Env::setAction(int i, double t, double v, bool s)
+void Env::setAction(int i, double w, double a_x, double a_y)
 {
-	_agents.at(i)->setAction(t, v, s);
+	_agents.at(i)->setAction(w, a_x, a_y);
+	if(i==0)
+		_cur_step += 1;
 }
 
 bool Env::isTerm(bool isTest)
@@ -330,14 +170,8 @@ bool Env::isTerm(bool isTest)
 	if(!isTest && _agents.at(0)->getCol())
 		return true;
 
-	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 3.0)
+	if(Dist(_agents.at(0)->getD(), _agents.at(0)->getP()) < 2.0)
 		return true;
-
-	// if(_agents.at(0)->getP()[0] < -30)
-	// 	return true;
-
-	// if(_agents.at(0)->getP()[0] > 30)
-	// 	return true;
 
 	if(_cur_step > _max_step)
 		return true;
@@ -356,13 +190,107 @@ double Env::getReward()
 	return _reward;
 }
 
-double Env::getScore()
+double* Env::getRewardSep()
+{
+	return _reward_sep;
+}
+
+double Env::getTargetScore()
 {
 	double d = Dist(_agents.at(0)->getD(), _agents.at(0)->getP());
-	double d_square = pow(d,2);
+	// double d_square = d*d;
 
-	// return -0.001*d_square;
 	return w_target * d;
+}
+
+double Env::getSmoothScore(Agent* agent_)
+{
+	double* cur_a = agent_->getA();
+	double cur_w = agent_->getW();
+
+	double smooth_a = 0.0;
+	double smooth_w = 0.0;
+
+	double prefA[2];
+	prefA[0] = 0.0;
+	prefA[1] = 0.0;
+
+	double a_dist = Dist(cur_a, prefA);
+	double a_boundary = 0.2;
+	if(a_dist > a_boundary)
+		smooth_a = w_smooth_a * (a_dist - a_boundary) * (a_dist - a_boundary);
+
+	double w_boundary = 0.4;
+	if(cur_w > w_boundary) // -0.15 ~ 0.15
+		smooth_w = w_smooth_w*(cur_w - w_boundary)*(cur_w - w_boundary);
+	if(cur_w < -w_boundary)
+		smooth_w = w_smooth_w*(cur_w + w_boundary)*(cur_w + w_boundary);
+
+	return smooth_a + smooth_w;
+}
+
+double Env::getPrefVScore(Agent* agent_)
+{
+	double* cur_v = agent_->getV();
+	double pref_v = 0.0;
+
+	double prefV1[2];
+	prefV1[0] = 0.0;
+	prefV1[1] = 1.0;
+
+	double prefV2[2];
+	prefV2[0] = -0.5;
+	prefV2[1] = 0.0;
+
+	double prefV3[2];
+	prefV3[0] = 0.5;
+	prefV3[1] = 0.0;
+
+	double prefV4[2];
+	prefV4[0] = 0.0;
+	prefV4[1] = 0.0;
+
+	double dist1 = Dist(cur_v, prefV1);
+	double dist2 = Dist(cur_v, prefV2);
+	double dist3 = Dist(cur_v, prefV3);
+	double dist4 = Dist(cur_v, prefV4);
+
+	double minDist = dist1;
+	if(dist2 < minDist)
+		minDist = dist2;
+	if(dist3 < minDist)
+		minDist = dist3;
+	if(dist4 < minDist)
+		minDist = dist4;
+
+	// std::cout << "v : " << cur_v[0] << ", " << cur_v[1] << std::endl;
+
+	pref_v = w_pref_v * (minDist) * (minDist);
+
+	return pref_v;
+}
+
+double Env::getBubbleScore(Agent* agent_)
+{
+	double* cur_vision = agent_->getVision();
+	double vision_depth = agent_->getVisionDepth();
+	int vision_ray = agent_->getVisionRayNum();
+	double mean = 0.0;
+	int idx = 0;
+
+	double min_ray = vision_depth;
+	for(int i=0; i<vision_ray; i++){
+		if(cur_vision[i] < min_ray)
+			min_ray = cur_vision[i];
+	}
+
+	double bScore = (double)(vision_depth - min_ray)/vision_depth;
+
+	// double cov_ = Cov(cur_vision, 45);
+	// double dist = (double)(min_ray)/(double)vision_depth;
+	// double d_of_cov = dist/cov_;
+
+	return w_bubble*bScore*bScore;
 }
 
 void Env::addAgent(Agent* agent)

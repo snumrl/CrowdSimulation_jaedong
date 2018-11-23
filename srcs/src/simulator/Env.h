@@ -19,19 +19,16 @@ class Env{
 		int wall_num;
 
 		int _cur_step = 0;
-		int _max_step = 300;
-		int _vision_depth = 30;
-
+		int _max_step = 400;
 		double _reward;
+		double _reward_sep[4];
 
-		int eval_set_num = 10;
-
-		vector<int> eval_agent_p_x;
-		vector<int> eval_agent_p_y;
-		vector<int> eval_agent_d_x;
-		vector<int> eval_agent_d_y;
-		vector<int> eval_obs_p_x;
-		vector<int> eval_obs_p_y;
+		int eval_set_num = 6;
+		vector<vector<double>> eval_agent_p;
+		vector<vector<double>> eval_agent_r;
+		vector<vector<double>> eval_agent_d;
+		vector<vector<double>> eval_obs_p;
+		vector<vector<double>> eval_obs_r;
 
 	public:
 		Env();
@@ -44,16 +41,16 @@ class Env{
 		virtual void ResetEnv() = 0;
 
 		const vector<Agent*> & Observe();
-		void setAction(int i, double t, double v, bool s);
+		void setAction(int i, double w, double a_x, double a_y);
 		void Update();
 		double getReward();
-		double getScore();
+		double* getRewardSep();
+		double getTargetScore();
+		double getSmoothScore(Agent* agent_);
+		double getPrefVScore(Agent* agent_);
+		double getBubbleScore(Agent* agent_);
 		bool isTerm(bool isTest);
 		bool isCol();
-
-		void depth_by_obstacles(double* angle, Agent* agent, double* _map);
-		void depth_by_agents(double* angle, Agent* agent,  double* _map, int idx);
-		void depth_by_walls(double* angle, Agent* agent,  double* _map, int idx);
 
 		// Object
 		void addAgent(Agent* agent);

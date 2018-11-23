@@ -5,6 +5,9 @@ file(REMOVE_RECURSE
   "CMakeFiles/csim.dir/srcs/src/simulator/Env.cpp.o"
   "CMakeFiles/csim.dir/srcs/src/simulator/parser.cpp.o"
   "CMakeFiles/csim.dir/srcs/src/simulator/mMath.cpp.o"
+  "CMakeFiles/csim.dir/srcs/src/simulator/scenarios/Dot.cpp.o"
+  "CMakeFiles/csim.dir/srcs/src/simulator/scenarios/Passing.cpp.o"
+  "CMakeFiles/csim.dir/srcs/src/simulator/scenarios/Basic.cpp.o"
   "../srcs/src/csim.pdb"
   "../srcs/src/csim.so"
 )

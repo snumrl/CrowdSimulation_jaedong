@@ -6,5 +6,5 @@ CXX_FLAGS =  -fopenmp -fPIC   -std=c++11
 
 CXX_DEFINES = -Dcsim_EXPORTS
 
-CXX_INCLUDES = -I/usr/include/python2.7 
+CXX_INCLUDES = -I/usr/local/include -I/usr/include/python3.5m 
 

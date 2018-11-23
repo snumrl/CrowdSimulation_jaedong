@@ -9,7 +9,7 @@ from agent import Agent, Obstacle, Wall
 from constants import Constants as cst
 
 import numpy as np
-import Queue
+import queue
 import copy
 import math
 
@@ -48,8 +48,8 @@ class Crossway:
 		self.walls = []
 
 	def init_record(self):
-		self.record_buffer_p = Queue.Queue(maxsize=5000)
-		self.record_buffer_q = Queue.Queue(maxsize=5000)
+		self.record_buffer_p = queue.Queue(maxsize=5000)
+		self.record_buffer_q = queue.Queue(maxsize=5000)
 		self.record_obs_p = []
 		self.record_agent_p = []
 		self.record_agent_q = []

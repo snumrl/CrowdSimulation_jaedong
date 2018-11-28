@@ -33,15 +33,15 @@ def make_env(seed=None):
 	return env
 
 
-def train(num_timesteps):
+def train(num_timesteps, path=None):
 	from baselines.ppo1 import mlp_policy, pposgd_simple
 	U.make_session(num_cpu=1).__enter__()
 	def policy_fn(name, ob_space, ac_space):
 		return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-			hid_size=128, num_hid_layers=3)
+			hid_size=64, num_hid_layers=3)
 
 	env = make_env()
-
+	print("prev path : ", path)
 	pi = pposgd_simple.learn(env, policy_fn,
 			max_timesteps=num_timesteps,
 			timesteps_per_actorbatch=512,
@@ -49,9 +49,10 @@ def train(num_timesteps):
 			optim_epochs=10,
 			optim_stepsize=1e-4,
 			optim_batchsize=64,
-			gamma=0.99,
+			gamma=0.95,
 			lam=0.95,
 			schedule='linear',
+			model_path=path
 		)
 
 	env.env.plotSave()
@@ -62,7 +63,9 @@ def train(num_timesteps):
 
 def main():
 	logger.configure()
-	train(num_timesteps=1e6)
+	# path_ = None
+	path_ = "../data/ckpt/network/1127a/15.0"
+	train(num_timesteps=1e6, path=path_)
 
 if __name__ == '__main__':
 	main()

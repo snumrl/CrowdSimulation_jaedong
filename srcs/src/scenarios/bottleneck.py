@@ -18,7 +18,7 @@ class Bottleneck:
 		self.name = 'Bottleneck'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
-		self.init_walls();
+		self.init_walls(obs['wall'])
 		self.init_record()
 
 	def init_agents(self, agent_obs):
@@ -44,7 +44,7 @@ class Bottleneck:
 			state['p'] = np.array(obstacle_obs[i]['p'])
 			self.obstacles.append(Obstacle(state))
 
-	def init_walls(self):
+	def init_walls(self, wall_obs):
 		self.walls = []
 		self.walls.append(Wall([-600, 200], [1, 0], 600))
 		self.walls.append(Wall([-600, -200], [1, 0], 600))

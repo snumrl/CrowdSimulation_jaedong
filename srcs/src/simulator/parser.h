@@ -14,6 +14,7 @@ class Parser{
 
 		int agent_num;
 		int obstacle_num;
+		int wall_num;
 
 	public:
 		Parser(std::string scenario, int a, int o);

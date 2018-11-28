@@ -47,4 +47,6 @@ void Obstacle::getData(double* _data)
 	_data[2] = _r[0];
 	_data[3] = _r[1];
 	_data[4] = _front;
+	_data[5] = 0.0;
+	_data[6] = 0.0;
 }

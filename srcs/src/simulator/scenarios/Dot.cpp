@@ -66,8 +66,8 @@ void Dot::ResetEnv()
 		obs_pos[1] = 8 - 8*(i/3);
 
 		double obs_r[2];
-		obs_r[0] = (30 + rand()%40)/20.0;
-		obs_r[1] = (30 + rand()%40)/20.0;
+		obs_r[0] = (40 + rand()%30)/20.0;
+		obs_r[1] = (40 + rand()%30)/20.0;
 
 		Obstacle* obs = new Obstacle(obs_r, obs_pos); // p q d
 		addObstacle(obs);
@@ -77,7 +77,7 @@ void Dot::ResetEnv()
 	{
 		double agent_r[2];
 		agent_r[0] = (3 + rand()%7)/10.0;
-		agent_r[1] = (3 + rand()%7)/10.0;
+		agent_r[1] = (3 + rand()%2)/10.0;
 
 		double tmp;
 		if(agent_r[0] < agent_r[1]){

@@ -45,7 +45,8 @@ class Env{
 		void Update();
 		double getReward();
 		double* getRewardSep();
-		double getTargetScore();
+		double getTargetDist();
+		double getTargetScore(double dist);
 		double getSmoothScore(Agent* agent_);
 		double getPrefVScore(Agent* agent_);
 		double getBubbleScore(Agent* agent_);

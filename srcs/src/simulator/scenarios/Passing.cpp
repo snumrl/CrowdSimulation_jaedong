@@ -19,18 +19,6 @@ Passing::Passing(int agent_n, int obs_n)
 
 void Passing::initWalls()
 {
-	// double st1[2] = {-24, 14};
-	// double p1[2] = {1.0, 0.0};
-	// double n1[2] = {0.0, -1.0};
-	// double l1 = 48;
-	// addWall(new Wall(st1, p1, l1, n1));
-
-	// double st2[2] = {-24, -14};
-	// double p2[2] = {1.0, 0.0};
-	// double n2[2] = {0.0, 1.0};
-	// double l2 = 48;
-	// addWall(new Wall(st2, p2, l2, n2));
-
 	wall_num = _walls.size();
 }
 

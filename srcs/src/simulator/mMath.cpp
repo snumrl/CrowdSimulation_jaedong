@@ -66,18 +66,18 @@ void Rotate2d(double cos, double sin, double* p)
 	p[1] = p1;
 }
 
-void MinWallOffset(Wall* w, Agent* agent, double* offset)
-{
-	double* p = agent->getP();
-	double* r = agent->getR();
+// void MinWallOffset(Wall* w, Agent* agent, double* offset)
+// {
+// 	double* p = agent->getP();
+// 	double* r = agent->getR();
 
-	double* st = w->getSt();
-	double* ed = w->getEd();
-	double* n = w->getNormal();
+// 	double* st = w->getSt();
+// 	double* ed = w->getEd();
+// 	double* n = w->getNormal();
 
-	offset[0] = r[0] * n[0];
-	offset[1] = r[0] * n[1];
-}
+// 	offset[0] = r[0] * n[0];
+// 	offset[1] = r[0] * n[1];
+// }
 
 double RayToSphereDistance(double* p1, double* p2, double* angle, double r)
 {
@@ -111,8 +111,30 @@ void Line(double* p1, double* p2, double* L)
 	L[2] = p2[0]*p1[1] - p1[0]*p2[1];
 }
 
-void LineIntersenction(double* L1, double* L2, double* R)
+void LineIntersection(double* L1, double* L2, double* R)
 {
+	double D  = L1[0] * L2[1] - L1[1] * L2[0];
+	double Dx = L1[2] * L2[1] - L1[1] * L2[2];
+	double Dy = L1[0] * L2[2] - L1[2] * L2[0];
+
+	R[0] = Dx/D;
+	R[1] = Dy/D;
+	if(D > 0)
+	{
+		R[2] = 1;
+	}
+	else
+		R[2] = 0;
+}
+
+void LineIntersection(double* st1, double* ed1, double* st2, double* ed2, double* R)
+{
+	double L1[3];
+	Line(st1, ed1, L1);
+
+	double L2[3];
+	Line(st2, ed2, L2);
+
 	double D  = L1[0] * L2[1] - L1[1] * L2[0];
 	double Dx = L1[2] * L2[1] - L1[1] * L2[2];
 	double Dy = L1[0] * L2[2] - L1[2] * L2[0];

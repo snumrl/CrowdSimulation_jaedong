@@ -1,0 +1,2 @@
+model_checkpoint_path: "net20.0"
+all_model_checkpoint_paths: "net20.0"

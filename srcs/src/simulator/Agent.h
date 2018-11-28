@@ -1,6 +1,8 @@
 #ifndef AGENT_H
 #define AGENT_H
 
+#include "Wall.h"
+
 class Agent{
 	protected:
 		int _id;
@@ -14,19 +16,20 @@ class Agent{
 		double _front = 0.0;
 		double _color[3];
 
-		double _vision[45];
-		double _vision_offset[45];
-		double _vision_depth = 10.0;
-		double _vision_interval = 8.0;
+		double _vision[36];
+		double _vision_offset[36];
+		double _vision_depth = 5.0;
+		double _vision_interval = 10.0;
 		double _vision_range = 360.0;
-		int _vision_ray_num = 45; // _vision_range / _vision_interval + 1
+		int _vision_ray_num = 36; // _vision_range / _vision_interval + 1
+		double _vision_vel[36];
 
 		double _v[2];
 		double _v_sim[2];
 		double _a[2];
 		double _a_sim[2];
-		double _w;
-		double _w_sim;
+		double _w = 0.0;
+		double _w_sim = 0.0;
 		double _time_step = 0.1;
 		bool _col = false;
 		bool _stop = false;
@@ -41,15 +44,16 @@ class Agent{
 		void Action();
 		void Revert(double* p, bool col);
 
-		// void setVisionWall(double* d);
-		// bool isVisibleWall(double* d);
+		void setVisionWall(Wall* w);
+		// bool isVisibleWall(Wall* w);
 
 		bool isVisible(double* d);
 		bool isCollidable(double* d);
 		bool colCheck(double* _data);
+		bool colCheckWall(Wall* w);
 
 		void visionReset();
-		void setVision(double* d);
+		void setVision(double* d, bool isWall);
 		void setVisionOffset();
 		void setShape();
 		void setVisionDepth(double _vd) {_vision_depth = _vd;};
@@ -59,6 +63,7 @@ class Agent{
 		double* getVisionOffset();
 		double getVisionDepth() {return _vision_depth;};
 		int getVisionRayNum() {return _vision_ray_num;};
+		double* getVisionVel() {return _vision_vel;};
 
 		void getData(double* _data);
 		void getRenderData(double* r_data);

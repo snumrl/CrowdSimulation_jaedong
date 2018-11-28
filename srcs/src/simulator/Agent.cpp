@@ -76,10 +76,8 @@ void Agent::getData(double* _data)
 	_data[2] = _r[0];
 	_data[3] = _r[1];
 	_data[4] = _front;
-	_data[5] = _q_x[0];
-	_data[6] = _q_x[1];
-	_data[7] = _q_y[0];
-	_data[8] = _q_y[1];
+	_data[5] = _v_sim[0];
+	_data[6] = _v_sim[1];
 
 	return;
 }
@@ -144,6 +142,7 @@ void Agent::visionReset()
 {
 	for(int i=0; i<_vision_ray_num; i++){
 		_vision[i] = _vision_depth;
+		_vision_vel[i] = 0.0;
 	}
 }
 
@@ -193,58 +192,87 @@ bool Agent::isVisible(double* d)
 	return false;
 }
 
-void Agent::setVision(double* _data)
+void Agent::setVision(double* _data, bool isWall)
 {
-	if(!isVisible(_data))
-		return;
+	if(!isWall){
+		if(!isVisible(_data))
+			return;
+	}
+
+	double st_pts[2] = {_p[0], _p[1]};
 
 	#pragma omp parallel for
 	for(int i=0; i<_vision_ray_num; i++){
-		double st_pts[2];
-		st_pts[0] = _p[0];
-		st_pts[1] = _p[1];
 		double cur_ang = 90.0 - _vision_range/2.0 + (i+0.5)*_vision_interval;
 		double cur_rad = AngleToRadian(cur_ang)+(_front - PI/2.0);
+		double angle_coord[2];
+		RadianToCoor(cur_rad, angle_coord);
+
+		double ed_pts[2];
+		ed_pts[0] = st_pts[0] + angle_coord[0]*(_vision_depth+_vision_offset[i]);
+		ed_pts[1] = st_pts[1] + angle_coord[1]*(_vision_depth+_vision_offset[i]);
 
 		double new_depth = _vision_depth;
-		if(_data[2] == _data[3]){ // circle
-			double angle_coord[2];
-			RadianToCoor(cur_rad, angle_coord);
-			double other_p[2];
-			other_p[0] = _data[0];
-			other_p[1] = _data[1];
-			double ray = RayToSphereDistance(st_pts, other_p, angle_coord, _data[2]);
-			ray -= _vision_offset[i];
-			if(ray >= 0.0 && ray <= _vision_depth){
-				new_depth = ray;
-				if(new_depth < _vision[i]){
-					_vision[i] = new_depth;
+		if(isWall){
+			double edge_st[2] = {_data[0], _data[1]};
+			double edge_ed[2] = {_data[2], _data[3]};
 
+			double result[3];
+			LineIntersection(st_pts, ed_pts, edge_st, edge_ed, result);
+			if(result[2] == 1){
+				double pts[2] = {result[0], result[1]};
+				double tx, ty;
+				tx = (result[0] - st_pts[0])/(angle_coord[0]+0.001);
+				ty = (result[1] - st_pts[1])/(angle_coord[1]+0.001);
+				if(tx>=0 && tx<=1.0 && ty>=0.0 && ty<=1.0){
+					double pts_len = Dist(st_pts, pts);
+					new_depth = pts_len - _vision_offset[i];
+					if(new_depth < _vision[i]){
+						_vision[i] = new_depth;
+						double rel_vel[2] = {-1*_v_sim[0], -1*_v_sim[1]};
+						double rel_dir[2] = {-1*angle_coord[0], -1*angle_coord[1]};
+						_vision_vel[i] = Dot(rel_vel, rel_dir);
+					}
 				}
 			}
 		}
-		else{ // ellipse
-			double cur_pts[2];
-			double ed_pts[2];
-			double cur_len = _vision_depth + _vision_offset[i];
-			ed_pts[0] = st_pts[0] + cur_len * cos(cur_rad);
-			ed_pts[1] = st_pts[1] + cur_len * sin(cur_rad);
-			if(LineEllipseIntersection(st_pts, ed_pts, _data, cur_pts)){
-				new_depth = Dist(st_pts, cur_pts) - _vision_offset[i];
-				if(new_depth < _vision[i]){
-					_vision[i] = new_depth;
-
+		else{
+			if(_data[2] == _data[3]){ // circle
+				double other_p[2];
+				other_p[0] = _data[0];
+				other_p[1] = _data[1];
+				double ray = RayToSphereDistance(st_pts, other_p, angle_coord, _data[2]);
+				ray -= _vision_offset[i];
+				if(ray >= 0.0 && ray <= _vision_depth){
+					new_depth = ray;
+					if(new_depth < _vision[i]){
+						_vision[i] = new_depth;
+						double rel_vel[2];
+						rel_vel[0] = _data[5] - _v_sim[0];
+						rel_vel[1] = _data[6] - _v_sim[1];
+						double rel_dir[2];
+						rel_dir[0] = -1*angle_coord[0];
+						rel_dir[1] = -1*angle_coord[1];
+						_vision_vel[i] = Dot(rel_vel, rel_dir);
+					}
+				}
+			}
+			else{ // ellipse
+				double cur_pts[2];
+				double cur_len = _vision_depth + _vision_offset[i];
+				if(LineEllipseIntersection(st_pts, ed_pts, _data, cur_pts)){
+					new_depth = Dist(st_pts, cur_pts)-_vision_offset[i];
+					if(new_depth < _vision[i]){
+						_vision[i] = new_depth;
+						double rel_vel[2] ={_data[5] - _v_sim[0], _data[6] - _v_sim[1]};
+						double rel_dir[2] = {-1*angle_coord[0], -1*angle_coord[1]};
+						_vision_vel[i] = Dot(rel_vel, rel_dir);
+					}
 				}
 			}
 		}
 	}
 }
-
-// void Agent::setVisionWall(double* _data)
-// {
-// 	if(!isVisibleWall(_data))
-// 		return;
-// }
 
 bool Agent::isCollidable(double* d)
 {
@@ -285,6 +313,21 @@ bool Agent::colCheck(double* _data)
 		return true;
 	else
 		return false;
+}
+
+bool Agent::colCheckWall(Wall* w)
+{
+	double result[2];
+	double cur_data[5] = {_p[0], _p[1], _r[0], _r[1], _front};
+	vector<Edge*> edges = w->getEdges();
+	for(int i=0; i<edges.size(); i++){
+		Edge* cur_edge = edges.at(i);
+		if(LineEllipseIntersection(cur_edge->getSt(), cur_edge->getEd(), cur_data, result)){
+			return true;
+		}
+	}
+
+	return false;
 }
 
 double* Agent::getVision()

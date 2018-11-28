@@ -29,13 +29,12 @@ from env import Env
 from dot import Dot
 from basic import Basic
 from passing import Passing
+from hallway import Hallway
 
 # SCENARIO = 'Basic'
 # SCENARIO = 'Passing'
 SCENARIO = 'Dot'
-
-AGENT_NUM = 1
-OBSTACLE_NUM = 9
+# SCENARIO = 'Hallway'
 
 class Renderer:
 	def __init__(self, WIDTH=1280, HEIGHT=720):
@@ -45,14 +44,12 @@ class Renderer:
 		self.initFlag()
 
 		self.SCENARIO = SCENARIO
-		self.AGENT_NUM = AGENT_NUM
-		self.OBSTACLE_NUM = OBSTACLE_NUM
 
 		self.isTerm = False
 		self.fps = 120
 
 		self.pi = self.train(num_timesteps=1)
-		U.load_state("../data/ckpt/network/1119a/net6.0")
+		U.load_state("../data/ckpt/network/1127a/15.0/2.0")
 
 		self.env = self.make_env()
 		ob = self.env.reset()
@@ -81,7 +78,7 @@ class Renderer:
 		self.flag['vision'] = False
 
 	def setEnvironment(self, SCENARIO):
-		self.Parser = csim.Parser(SCENARIO, self.AGENT_NUM, self.OBSTACLE_NUM)
+		self.Parser = csim.Parser(SCENARIO,0,0)
 
 		obs = self.env.env.observe()
 
@@ -91,6 +88,8 @@ class Renderer:
 			self.Scenario = Passing(obs)
 		elif SCENARIO == 'Dot':
 			self.Scenario = Dot(obs)
+		elif SCENARIO == 'Hallway':
+			self.Scenario = Hallway(obs)
 
 	def make_env(self, seed=None):
 		reward_scale = 1.0
@@ -129,8 +128,6 @@ class Renderer:
 				lam=0.95,
 				schedule='linear',
 			)
-
-		# U.save_state("../data/ckpt/network/network_002")
 
 		return pi
 

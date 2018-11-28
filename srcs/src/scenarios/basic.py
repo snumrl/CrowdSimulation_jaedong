@@ -18,7 +18,7 @@ class Basic:
 		self.name = 'Basic'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
-		self.init_walls()
+		self.init_walls(obs['wall'])
 		self.init_record()
 
 	def init_agents(self, agent_obs):
@@ -33,10 +33,6 @@ class Basic:
 			state['color'] = np.array(agent_obs[i]['color'])
 			state['vision'] = np.array(agent_obs[i]['sensor_state'])
 			state['offset'] = np.array(agent_obs[i]['offset_data'])
-			# state['v_x'] = agent_obs[i]['v_x']
-			# state['v_y'] = agent_obs[i]['v_y']
-			# state['d_map'] = np.array(agent_obs[i]['d_map'])
-			# state['v_map'] = np.array(agent_obs[i]['v_map'])
 			self.agents.append(Agent(state))
 
 	def init_obstacles(self, obstacle_obs):
@@ -49,10 +45,8 @@ class Basic:
 			state['front'] = np.array(obstacle_obs[i]['front'])
 			self.obstacles.append(Obstacle(state))
 
-	def init_walls(self):
+	def init_walls(self, wall_obs):
 		self.walls = []
-		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, -200], [1, 0], cst.WINDOW_WIDTH))
-		# self.walls.append(Wall([-cst.WINDOW_WIDTH/2, 200], [1, 0], cst.WINDOW_WIDTH))
 
 	def init_record(self):
 		self.record_buffer_p = queue.Queue(maxsize=5000)
@@ -86,6 +80,12 @@ class Basic:
 			self.obstacles[i].setP(obs_data[i]['p'])
 			self.obstacles[i].setR(obs_data[i]['r'])
 			self.obstacles[i].setFront(obs_data[i]['front'])
+
+		wall_data = obs['wall']
+		for i in range(self.obstacle_count):
+			self.walls[i].setP(obs_data[i]['p'])
+			self.walls[i].setW(obs_data[i]['w'])
+			self.walls[i].setH(obs_data[i]['h'])
 
 	def render(self, vision=False, trajectory=False):
 		for i in range(self.obstacle_count):

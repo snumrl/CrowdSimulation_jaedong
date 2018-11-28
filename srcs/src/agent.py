@@ -136,25 +136,13 @@ class Agent(CrowdObject):
 	def render_vision(self):
 		glLineWidth(2)
 		glColor3f(0.0, 0.0, 1.0)
-		# print("offset : ", self.offset)
-		# print("vision 0 : ", self.vision[0])
-		# print("vision 1 : ", self.vision[1])
-		# print("vision 2 : ", self.vision[2])
-		for i in range(45):
-			angle = mMath.DegreeToRadian((i+0.5)*8.0 - 180.0 + 90.0)
+		for i in range(36):
+			angle = mMath.DegreeToRadian((i+0.5)*10.0 - 180.0 + 90.0)
 			glBegin(GL_LINES)
 			glVertex3f(self.offset[i]*math.cos(angle), self.offset[i]*math.sin(angle), 0)
-			glVertex3f((self.offset[i]+10.0*self.vision[i])*math.cos(angle), (self.offset[i]+10.0*self.vision[i])*math.sin(angle), 0)
+			glVertex3f((self.offset[i]+5.0*self.vision[i])*math.cos(angle), (self.offset[i]+5.0*self.vision[i])*math.sin(angle), 0)
 			glEnd()
 
-	# def render_depth_map(self):
-	# 	glLineWidth(2)
-	# 	for i in range(self.q_lim):
-	# 		angle = self.front + math.radians(self.agent_fov/2 - self.interval*i)
-			# glBegin(GL_LINES)
-			# glVertex3f(self.r*math.cos(angle), self.r*math.sin(angle), 0)
-			# glVertex3f((self.d_map[i]+self.r)*math.cos(angle), (self.d_map[i]+self.r)* math.sin(angle), 0)
-			# glEnd()
 
 class Obstacle(CrowdObject):
 	def __init__(self, state):
@@ -207,25 +195,45 @@ class Obstacle(CrowdObject):
 
 #Rectangle Form
 class Wall():
-	def __init__(self, u, p, l):
-		self.st = u
-		p /= np.linalg.norm(p)
-		self.ed = u + np.array(p) * l
+	def __init__(self, state):
+		self.reset(state)
 
-		self.vec = p
-		self.l = l
+	def reset(self, state):
+		self.p = state['p']
+		self.w = state['w']
+		self.h = state['h']
 
-		self.u = u
-		self.p = p
-		self.q = np.array([p[1]*-1, p[0]])
+	def setP(self, p = None):
+		if p is None:
+			p = [0.0, 0.0]
+
+		self.p = np.array(p, dtype=float)
+
+	def setW(self, w = None):
+		if w is None:
+			r = 1.0
+
+		self.w = w
+
+	def setH(self, h = None):
+		if h is None:
+			h = 1.0
+
+		self.h = h
+
+	def getState(self):
+		state = {}
+		state['p'] = self.p
+		state['w'] = self.w
+		state['h'] = self.h
+		return copy.deepcopy(state)
 
 	def render(self):
 		glPushMatrix()
-		glColor3f(0.7, 0.7, 0.7)
-		glBegin(GL_LINES)
-		glVertex3f(self.st[0], self.st[1], 0)
-		glVertex3f(self.ed[0], self.ed[1], 0)
-		glEnd()
+		glColor3f(0.2, 0.2, 0.25)
+		glTranslatef(self.p[0], self.p[1], 0.0)
+		glScalef(self.w, self.h, 1.0)
+		glutSolidCube(1.0)
 		glPopMatrix()
 
 

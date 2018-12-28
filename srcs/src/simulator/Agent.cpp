@@ -26,7 +26,7 @@ Agent::Agent()
 	_v_sim[1] = 0.0;
 
 	setShape();
-	visionReset();
+	visionInit();
 	setVisionOffset();
 }
 
@@ -42,7 +42,7 @@ Agent::Agent(double* r)
 	_v_sim[1] = 0.0;
 
 	setShape();
-	visionReset();
+	visionInit();
 	setVisionOffset();
 }
 
@@ -61,7 +61,7 @@ Agent::Agent(double* r, double* p)
 	_v_sim[1] = 0.0;
 
 	setShape();
-	visionReset();
+	visionInit();
 	setVisionOffset();
 }
 
@@ -128,21 +128,35 @@ void Agent::getBodyState(double* b_data)
 	b_data[4] = _v_sim[1];
 	b_data[5] = _w_sim;
 	//shape
-	b_data[6] = (_shape[0] - 0.3)/0.7; //scale to 0~1
-	b_data[7] = (_shape[1] - 0.3)/0.7; //scale to 0~1
-	b_data[8] = (_shape[2] - 0.3)/0.7; //scale to 0~1
-	b_data[9] = (_shape[3] - 0.3)/0.7; //scale to 0~1
-	b_data[10] = (_shape[4] - 0.3)/0.7; //scale to 0~1
-	b_data[11] = (_shape[5] - 0.3)/0.7; //scale to 0~1
-	b_data[12] = (_shape[6] - 0.3)/0.7; //scale to 0~1
-	b_data[13] = (_shape[7] - 0.3)/0.7; //scale to 0~1
+	b_data[6]   = 2.0*(_shape[0] - 0.3)/0.7; //scale to 0~2
+	b_data[7]   = 2.0*(_shape[1] - 0.3)/0.7; //scale to 0~2
+	b_data[8]   = 2.0*(_shape[2] - 0.3)/0.7; //scale to 0~2
+	b_data[9]   = 2.0*(_shape[3] - 0.3)/0.7; //scale to 0~2
+	b_data[10] = 2.0*(_shape[4] - 0.3)/0.7; //scale to 0~2
+	b_data[11] = 2.0*(_shape[5] - 0.3)/0.7; //scale to 0~2
+	b_data[12] = 2.0*(_shape[6] - 0.3)/0.7; //scale to 0~2
+	b_data[13] = 2.0*(_shape[7] - 0.3)/0.7; //scale to 0~2
+	b_data[14] = 2.0*(_shape[8] - 0.3)/0.7; //scale to 0~2
+	b_data[15] = 2.0*(_shape[9] - 0.3)/0.7; //scale to 0~2
+	b_data[16] = 2.0*(_shape[10] - 0.3)/0.7; //scale to 0~2
+	b_data[17] = 2.0*(_shape[11] - 0.3)/0.7; //scale to 0~2
+}
+
+void Agent::visionInit()
+{
+	#pragma omp parallel for
+	for(int i=0; i<_vision_ray_num; i++){
+		_vision[i] = _vision_depth;
+		_vision_prev[i] = _vision_depth;
+		_vision_vel[i] = 0.0;
+	}
 }
 
 void Agent::visionReset()
 {
 	for(int i=0; i<_vision_ray_num; i++){
+		_vision_prev[i] = _vision[i];
 		_vision[i] = _vision_depth;
-		_vision_vel[i] = 0.0;
 	}
 }
 
@@ -163,8 +177,8 @@ void Agent::setVisionOffset()
 void Agent::setShape()
 {
 	#pragma omp parallel for
-	for(int i=0; i<8; i++){
-		double cur_ang = 45.0*i;
+	for(int i=0; i<12; i++){
+		double cur_ang = 30.0*i;
 		double cur_rad = AngleToRadian(cur_ang);
 		double cur_offset = 1.0 / sqrt( cos(cur_rad)*cos(cur_rad) / (_r[0]*_r[0])  + sin(cur_rad)*sin(cur_rad) / (_r[1]*_r[1]));
 		_shape[i] = cur_offset;
@@ -208,6 +222,10 @@ void Agent::setVision(double* _data, bool isWall)
 		double angle_coord[2];
 		RadianToCoor(cur_rad, angle_coord);
 
+		double cur_rad_local = AngleToRadian(cur_ang);
+		double angle_coord_local[2];
+		RadianToCoor(cur_rad_local, angle_coord_local);
+
 		double ed_pts[2];
 		ed_pts[0] = st_pts[0] + angle_coord[0]*(_vision_depth+_vision_offset[i]);
 		ed_pts[1] = st_pts[1] + angle_coord[1]*(_vision_depth+_vision_offset[i]);
@@ -221,18 +239,16 @@ void Agent::setVision(double* _data, bool isWall)
 			LineIntersection(st_pts, ed_pts, edge_st, edge_ed, result);
 			if(result[2] == 1){
 				double pts[2] = {result[0], result[1]};
-				double tx, ty;
-				tx = (result[0] - st_pts[0])/(angle_coord[0]+0.001);
-				ty = (result[1] - st_pts[1])/(angle_coord[1]+0.001);
-				if(tx>=0 && tx<=1.0 && ty>=0.0 && ty<=1.0){
-					double pts_len = Dist(st_pts, pts);
-					new_depth = pts_len - _vision_offset[i];
-					if(new_depth < _vision[i]){
-						_vision[i] = new_depth;
-						double rel_vel[2] = {-1*_v_sim[0], -1*_v_sim[1]};
-						double rel_dir[2] = {-1*angle_coord[0], -1*angle_coord[1]};
-						_vision_vel[i] = Dot(rel_vel, rel_dir);
-					}
+				double pts_len = Dist(st_pts, pts);
+				new_depth = pts_len;
+				if(new_depth < _vision[i]){
+					_vision[i] = new_depth;
+					if(_vision[i] < _vision_offset[i])
+						_vision[i] = _vision_offset[i];
+
+					// double rel_vel[2] = {-1*_v_sim[0], -1*_v_sim[1]};
+					// double rel_dir[2] = {-1*angle_coord_local[0], -1*angle_coord_local[1]};
+					// _vision_vel[i] = Dot(rel_vel, rel_dir);
 				}
 			}
 		}
@@ -242,18 +258,19 @@ void Agent::setVision(double* _data, bool isWall)
 				other_p[0] = _data[0];
 				other_p[1] = _data[1];
 				double ray = RayToSphereDistance(st_pts, other_p, angle_coord, _data[2]);
-				ray -= _vision_offset[i];
 				if(ray >= 0.0 && ray <= _vision_depth){
 					new_depth = ray;
 					if(new_depth < _vision[i]){
 						_vision[i] = new_depth;
-						double rel_vel[2];
-						rel_vel[0] = _data[5] - _v_sim[0];
-						rel_vel[1] = _data[6] - _v_sim[1];
-						double rel_dir[2];
-						rel_dir[0] = -1*angle_coord[0];
-						rel_dir[1] = -1*angle_coord[1];
-						_vision_vel[i] = Dot(rel_vel, rel_dir);
+						if(_vision[i] < _vision_offset[i])
+							_vision[i] = _vision_offset[i];
+						// double rel_vel[2];
+						// rel_vel[0] = _data[5] - _v_sim[0];
+						// rel_vel[1] = _data[6] - _v_sim[1];
+						// double rel_dir[2];
+						// rel_dir[0] = -1*angle_coord_local[0];
+						// rel_dir[1] = -1*angle_coord_local[1];
+						// _vision_vel[i] = Dot(rel_vel, rel_dir);
 					}
 				}
 			}
@@ -261,14 +278,32 @@ void Agent::setVision(double* _data, bool isWall)
 				double cur_pts[2];
 				double cur_len = _vision_depth + _vision_offset[i];
 				if(LineEllipseIntersection(st_pts, ed_pts, _data, cur_pts)){
-					new_depth = Dist(st_pts, cur_pts)-_vision_offset[i];
+					new_depth = Dist(st_pts, cur_pts);
 					if(new_depth < _vision[i]){
 						_vision[i] = new_depth;
-						double rel_vel[2] ={_data[5] - _v_sim[0], _data[6] - _v_sim[1]};
-						double rel_dir[2] = {-1*angle_coord[0], -1*angle_coord[1]};
-						_vision_vel[i] = Dot(rel_vel, rel_dir);
+						if(_vision[i] < _vision_offset[i])
+							_vision[i] = _vision_offset[i];
+						// double rel_vel[2];
+						// rel_vel[0] = _data[5] - _v_sim[0];
+						// rel_vel[1] = _data[6] - _v_sim[1];
+						// double rel_dir[2];
+						// rel_dir[0] = -1*angle_coord_local[0];
+						// rel_dir[1] = -1*angle_coord_local[1];
+						// _vision_vel[i] = Dot(rel_vel, rel_dir);
 					}
 				}
+			}
+		}
+	}
+}
+
+void Agent::setVisionVel(){
+	#pragma omp parallel for
+	for(int i=0; i<_vision_ray_num; i++){
+		_vision_vel[i] = _vision[i] - _vision_prev[i];
+		if(_vision_vel[i] > 2.0 || _vision_vel[i] < -2.0){
+			if(_vision[i] == _vision_depth || _vision_prev[i] == _vision_depth){
+				_vision_vel[i] = 0.0;
 			}
 		}
 	}
@@ -335,23 +370,28 @@ double* Agent::getVision()
 	return _vision;
 }
 
-void Agent::setAction(double w, double a_x, double a_y)
+void Agent::setAction(double w, double v_x, double v_y)
 {
-	_a[0] = a_x;
-	_a[1] = a_y;
+	_v_prev[0] = _v[0];
+	_v_prev[1] = _v[1];
 
-	_a_sim[0] = 1.5 * _a[0];
-	_a_sim[1] = 1.5 * _a[1];
+	_v[0] = 2.0*v_x;
+	_v[1] = 2.0*v_y;
 
-	_v[0] += _a_sim[0] * _time_step;
-	_v[1] += _a_sim[1] * _time_step;
+	_v_sim[0] = mClip(-1.5, 1.5, _v[0]);
+	_v_sim[1] = mClip(-1.5, 1.5, _v[1]);
 
-	_v_sim[0] = mClip(-1.0, 1.0, _v[0]);
-	_v_sim[1] = mClip(-0.5, 2.0, _v[1]);
+	_w_prev = _w;
 
-	_w = w;
-	_w_sim = 1.5*w;
-	_w_sim = mClip(-1.5, 1.5, _w_sim);
+	_w = 4.0*w;
+
+	_w_sim = mClip(-4.0, 4.0, _w);
+}
+
+void Agent::Action()
+{
+	if(_stop)
+		return;
 
 	_front += _w_sim * _time_step;
 
@@ -362,12 +402,6 @@ void Agent::setAction(double w, double a_x, double a_y)
 
 	RadianToCoor(_front-0.5*PI, _q_x);
 	RadianToCoor(_front, _q_y);
-}
-
-void Agent::Action()
-{
-	if(_stop)
-		return;
 
 	_p_prev[0] = _p[0];
 	_p_prev[1] = _p[1];
@@ -380,6 +414,7 @@ void Agent::Action()
 
 	_v[0] = _v_sim[0];
 	_v[1] = _v_sim[1];
+
 	_w = _w_sim;
 }
 

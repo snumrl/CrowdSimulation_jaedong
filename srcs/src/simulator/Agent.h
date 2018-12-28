@@ -7,7 +7,7 @@ class Agent{
 	protected:
 		int _id;
 		double _r[2];
-		double _shape[8];
+		double _shape[12];
 		double _p[2];
 		double _p_prev[2];
 		double _d[2];
@@ -17,20 +17,24 @@ class Agent{
 		double _color[3];
 
 		double _vision[36];
+		double _vision_prev[36];
+		double _vision_vel[36];
 		double _vision_offset[36];
-		double _vision_depth = 5.0;
+		double _vision_depth = 7.0;
 		double _vision_interval = 10.0;
 		double _vision_range = 360.0;
 		int _vision_ray_num = 36; // _vision_range / _vision_interval + 1
-		double _vision_vel[36];
 
 		double _v[2];
+		double _v_prev[2];
 		double _v_sim[2];
-		double _a[2];
-		double _a_sim[2];
+
 		double _w = 0.0;
+		double _w_prev = 0.0;
 		double _w_sim = 0.0;
+
 		double _time_step = 0.1;
+
 		bool _col = false;
 		bool _stop = false;
 
@@ -52,8 +56,10 @@ class Agent{
 		bool colCheck(double* _data);
 		bool colCheckWall(Wall* w);
 
+		void visionInit();
 		void visionReset();
 		void setVision(double* d, bool isWall);
+		void setVisionVel();
 		void setVisionOffset();
 		void setShape();
 		void setVisionDepth(double _vd) {_vision_depth = _vd;};
@@ -77,15 +83,16 @@ class Agent{
 		void setD(double x, double y) {_d[0] = x; _d[1] = y;};
 		void setR(double _rx, double _ry) {_r[0] = _rx; _r[1] = _ry;};
 		void setV(double v_x, double v_y) {_v[0] = v_x; _v[1] = v_y;};
+		void setVprev(double v_x, double v_y) {_v_prev[0] = v_x; _v_prev[1] = v_y;};
 		void setVsim(double v_x, double v_y) {_v_sim[0] = v_x; _v_sim[1] = v_y;};
-		void setA(double a_x, double a_y) {_a[0] = a_x; _a[1] = a_y;};
-		void setAsim(double a_x, double a_y) {_a_sim[0] = a_x; _a_sim[1] = a_y;};
 		void setW(double w) {_w = w;};
+		void setWprev(double w){_w_prev = w;};
 		void setWsim(double w) {_w_sim = w;};
 		void setFront(double f) {_front = f;};
 		void setColor(double r, double g, double b) {_color[0] = r; _color[1] = g; _color[2] = b;};
 		void setCol(bool c) {_col = c;};
 		void setId (int id) {_id = id;}
+		void setTimeStep(double t) {_time_step=t;};
 
 		double* getP() {return _p;};
 		double* getPprev() {return _p_prev;};
@@ -94,15 +101,16 @@ class Agent{
 		double* getD() {return _d;};
 		double* getR() {return _r;};
 		double* getV() {return _v;};
+		double* getVprev() {return _v_prev;};
 		double* getVsim() {return _v_sim;};
-		double* getA() {return _a;};
-		double* getAsim() {return _a_sim;};
 		double getW() {return _w;};
+		double getWprev() {return _w_prev;};
 		double getWsim() {return _w_sim;};
 		double getFront() {return _front;};
 		double* getColor() {return _color;}
 		bool getCol() {return _col;};
-		int getId () const {return _id;}
+		int getId () const {return _id;};
+		double getTimeStep() {return _time_step;};
 };
 
 

@@ -7,29 +7,32 @@ import copy
 import sys
 import matplotlib.pyplot as plt
 from norm import Normalizer
+from collections import deque
 
 # SCENARIO = "Basic"
 # SCENARIO = "Passing"
-SCENARIO = "Dot"
-# SCENARIO = "Hallway"
+# SCENARIO = "Dot"
+SCENARIO = "Hallway"
 
 class Env:
 	def __init__(self):
 		self.AGENT_NUM = 1
-		self.OBSTACLE_NUM = 9
+		self.OBSTACLE_NUM = 6
 		self.Parser = csim.Parser(SCENARIO, self.AGENT_NUM, self.OBSTACLE_NUM)
 
-		ob_low = 0.0 * np.ones(86) # 14 + 36 + 36 = 86
-		ob_high =1.0 * np.ones(86)
+		body_dim = 18
+		vision_dim = 36
+		vel_dim = 36
+		dim = body_dim + vision_dim + vel_dim
 
-		# ac_low = -1.2 * np.ones(3)
-		# ac_high = 1.2 * np.ones(3)
+		ob_low = 0.0 * np.ones(dim) # 14 + 45 + 45 = 104
+		ob_high =1.0 * np.ones(dim)
 
 		self.normalizer_ac = Normalizer(
 			real_val_max=1.0*np.ones(3),
 			real_val_min=-1.0*np.ones(3),
-			norm_val_max=4*np.ones(3),
-			norm_val_min=-4*np.ones(3)
+			norm_val_max=3*np.ones(3),
+			norm_val_min=-3*np.ones(3)
 		)
 
 		for i in range(2):
@@ -42,9 +45,10 @@ class Env:
 		ob_low[4] = -1.5
 		ob_high[4] = 1.5
 
-		for i in range(50,86):
-			ob_low[i] = -2.5
-			ob_high[i] = 2.5
+		# vel observation
+		for i in range(body_dim+vision_dim, dim):
+			ob_low[i] = -3.0
+			ob_high[i] = 3.0
 
 		self.observation_space = spaces.Box(
 			low = ob_low,
@@ -69,18 +73,31 @@ class Env:
 		self.fig = plt.figure()
 		self.ax1 = self.fig.add_subplot(111)
 		self.ax1.plot([], label='reward', color='black')
-		self.ax1.plot([], label='target', color='r')
-		self.ax1.plot([], label='pref', color='g')
-		self.ax1.plot([], label='smooth', color='b')
-		self.ax1.plot([], label='col', color='yellow')
+		self.ax1.plot([], label='target', color='red')
+		self.ax1.plot([], label='pref', color='green')
+		self.ax1.plot([], label='smooth', color='blue')
+		self.ax1.plot([], label='bubble', color = 'orange')
+		self.ax1.plot([], label='col', color='purple')
+		self.ax1.plot([], label='dir', color='cyan')
 		self.ax1.legend()
 
 		self.resetRewardCum()
+
+		self.reward_queue = deque(maxlen=100)
+		self.target_queue = deque(maxlen=100)
+		self.prefV_queue = deque(maxlen=100)
+		self.smooth_queue = deque(maxlen=100)
+		self.col_queue = deque(maxlen=100)
+		self.bubble_queue = deque(maxlen=100)
+		self.dir_queue = deque(maxlen=100)
+
 		self.reward_plot = []
 		self.target_plot = []
 		self.prefV_plot = []
 		self.smooth_plot = []
 		self.col_plot = []
+		self.bubble_plot = []
+		self.dir_plot = []
 
 	def resetRewardCum(self):
 		self.reward_cum = 0
@@ -88,28 +105,45 @@ class Env:
 		self.reward_prefV_cum = 0
 		self.reward_smooth_cum = 0
 		self.reward_col_cum = 0
+		self.reward_bubble_cum = 0
+		self.reward_dir_cum = 0
 
 	def setRewardPlot(self, reward, rewards):
 		self.reward_target_cum += rewards[0]
 		self.reward_prefV_cum += rewards[1]
 		self.reward_smooth_cum += rewards[2]
 		self.reward_col_cum += rewards[3]
+		self.reward_bubble_cum += rewards[4]
+		self.reward_dir_cum += rewards[5]
 
-		self.reward_cum += rewards[0]*rewards[1]*rewards[2]*rewards[3]
+		self.reward_cum += rewards[0]+rewards[1]+rewards[2]+rewards[3]+rewards[4] + rewards[5]
+
+	def appendPlot(self):
+		self.reward_queue.append(self.reward_cum)
+		self.target_queue.append(self.reward_target_cum)
+		self.prefV_queue.append(self.reward_prefV_cum)
+		self.smooth_queue.append(self.reward_smooth_cum)
+		self.col_queue.append(self.reward_col_cum)
+		self.bubble_queue.append(self.reward_bubble_cum)
+		self.dir_queue.append(self.reward_dir_cum)
 
 	def drawPlot(self):
-		self.target_plot.append(self.reward_target_cum/self.cur_step)
-		self.prefV_plot.append(self.reward_prefV_cum/self.cur_step)
-		self.smooth_plot.append(self.reward_smooth_cum/self.cur_step)
-		self.col_plot.append(self.reward_col_cum/self.cur_step)
-		self.reward_plot.append(self.reward_cum/self.cur_step)
-		print("reward : ",self.reward_cum/self.cur_step)
+		self.reward_plot.append(np.mean(self.reward_queue))
+		self.target_plot.append(np.mean(self.target_queue))
+		self.prefV_plot.append(np.mean(self.prefV_queue))
+		self.smooth_plot.append(np.mean(self.smooth_queue))
+		self.bubble_plot.append(np.mean(self.bubble_queue))
+		self.col_plot.append(np.mean(self.col_queue))
+		self.dir_plot.append(np.mean(self.dir_queue))
+
 		plt.ion()
 		self.ax1.plot(self.reward_plot, label='reward', color='black')
-		self.ax1.plot(self.target_plot, label='target', color='r')
-		self.ax1.plot(self.prefV_plot, label='pref', color='g')
-		self.ax1.plot(self.smooth_plot, label='smooth', color='b')
-		self.ax1.plot(self.col_plot, label='col', color='yellow')
+		self.ax1.plot(self.target_plot, label='target', color='red')
+		self.ax1.plot(self.prefV_plot, label='pref', color='green')
+		self.ax1.plot(self.smooth_plot, label='smooth', color='blue')
+		self.ax1.plot(self.bubble_plot, label='col', color='orange')
+		self.ax1.plot(self.col_plot, label='col', color='purple')
+		self.ax1.plot(self.dir_plot, label='dir', color='cyan')
 		plt.draw()
 		plt.pause(0.1)
 		plt.show()
@@ -136,29 +170,13 @@ class Env:
 			print("state nan")
 			sys.exit(1)
 
-		print_ = False
-		for ac in self.actions:
-			for ac_ in ac:
-				if ac_ > 1.5 or ac_ < -1.5:
-					print_= True
-
-		if state[4] > 1.2 or state[4] < -0.5:
-			print_= True
-
-		# if print_:
-		# 	print("action : ",self.actions)
-		# 	print("state : ", state)
-		# 	print("reward : ", reward)
-		# 	print("\n")
-
 		rewards = memory['reward_sep']
 		self.cur_step += 1
 
 		self.setRewardPlot(reward, rewards)
 		if isTerm:
-			self.drawPlot()
+			self.appendPlot()
 			self.resetRewardCum()
-			self.cur_step = 0
 
 		return state, reward, isTerm, {}
 
@@ -173,11 +191,17 @@ class Env:
 		a_norm = []
 		for ac in a_:
 			a_norm.append(self.normalizer_ac.norm_to_real(ac))
+			# if ac[0] > 3.0 or ac[1] > 3.0 or ac[2] > 3.0:
+			# print("ac : ", ac)
+			# print("ac_ : ", self.normalizer_ac.norm_to_real(ac))
 
 		memory = self.Parser.Step(np.array(a_norm, dtype=np.float32), True)
 
 		obs = memory['obs']
 		obs = self.convert_to_numpy(obs)
+
+		# print("action : ", a_norm)
+		# print("state : ", obs['agent'][0]['body_state'])
 
 		state = obs
 		reward = memory['reward']

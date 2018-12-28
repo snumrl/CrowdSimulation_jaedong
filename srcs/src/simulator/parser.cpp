@@ -17,6 +17,8 @@ Parser::Parser(string Scenario, int a, int o)
 	np::initialize();
 	Py_Initialize();
 
+	srand((unsigned int)time(0));
+
 	cout << "Scenario : " << Scenario << endl;
 
 	agent_num = a;
@@ -59,27 +61,16 @@ p::dict Parser::Step(np::ndarray& action_, bool isTest)
 		_env->setAction(i, w, v_x, v_y);
 	}
 
-	clock_t begin = clock();
 	_env->Update();
-	clock_t end = clock();
-	double elapsed_secs = double(end-begin)/CLOCKS_PER_SEC;
 
 	p::dict memory;
-	clock_t begin2 = clock();
 	memory["obs"] = Observe();
-	clock_t end2 = clock();
-	double elapsed_secs2 = double(end2-begin2)/CLOCKS_PER_SEC;
-	if(elapsed_secs+elapsed_secs2 > 0.08){
-		std::cout << "update time : " << elapsed_secs << std::endl;
-		std::cout << "observe time : " << elapsed_secs2 << std::endl;
-	}
-
 	memory["isCol"] = _env->isCol();
 	memory["isTerm"] = _env->isTerm(isTest);
 	memory["reward"] = _env->getReward();
 	double* reward_sep = _env->getRewardSep();
 	p::list reward_sep_list;
-	for(int i=0; i<4; i++)
+	for(int i=0; i<6; i++)
 		reward_sep_list.append(reward_sep[i]);
 	memory["reward_sep"] = reward_sep_list;
 
@@ -97,6 +88,8 @@ p::dict Parser::Observe()
 	vector<Obstacle*> obstacles = _env-> getObstacles();
 	vector<Wall*> walls = _env-> getWalls();
 
+	int ray_num = agents.at(0)->getVisionRayNum();
+
 	Agent* cur_agent;
 	for(int i=0; i<agent_num; i++)
 	{
@@ -109,29 +102,29 @@ p::dict Parser::Observe()
 		for(int j=0; j<10; j++)
 			render_list.append(r_data[j]);
 
-		double body_data[14]; // body
+		double body_data[18]; // body
 		cur_agent->getBodyState(body_data);
 		p::list body_list;
-		for(int j=0; j<14; j++)
+		for(int j=0; j<18; j++)
 			body_list.append(body_data[j]);
 
 		double* sensor_data; // sensor
 		sensor_data = cur_agent->getVision();
 		p::list sensor_list;
 		double vision_depth = cur_agent->getVisionDepth();
-		for(int j=0; j<36; j++)
-			sensor_list.append(sensor_data[j]/vision_depth);
+		for(int j=0; j<ray_num; j++)
+			sensor_list.append(3.0*sensor_data[j]/vision_depth);
 
 		double* velocity_data; // sensor
 		velocity_data = cur_agent->getVisionVel();
 		p::list velocity_list;
-		for(int j=0; j<36; j++)
+		for(int j=0; j<ray_num; j++)
 			velocity_list.append(velocity_data[j]);
 
 		double* sensor_offset_data;
 		sensor_offset_data = cur_agent->getVisionOffset();
 		p::list offset_list;
-		for(int j=0; j<36; j++)
+		for(int j=0; j<ray_num; j++)
 			offset_list.append(sensor_offset_data[j]);
 
 		cur_agent_data["render_data"] = render_list;

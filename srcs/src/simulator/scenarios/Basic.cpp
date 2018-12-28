@@ -103,7 +103,7 @@ void Basic::ResetEnv()
 	{
 		double agent_r[2];
 		agent_r[0] = (3 + rand()%7)/10.0;
-		agent_r[1] = (3 + rand()%7)/10.0;
+		agent_r[1] = (3 + rand()%2)/10.0;
 
 		double tmp;
 		if(agent_r[0] < agent_r[1]){
@@ -178,13 +178,27 @@ void Basic::ResetEnv()
 				break;
 		}
 
+		double cur_front = ((rand()%628)/100.0)-3.14;
+		double y_coord[2];
+		double x_coord[2];
+		RadianToCoor(cur_front, y_coord);
+		RadianToCoor(cur_front-0.5*3.141592, x_coord);
+
+		agent->setFront(cur_front);
+		agent->setQy(y_coord[0], y_coord[1]);
+		agent->setQx(x_coord[0], x_coord[1]);
 		agent->setD( d_pos[0], d_pos[1]);
-		agent->setQy(1.0, 0.0);
-		agent->setQx(0.0, -1.0);
-		agent->setFront(0.0);
-		agent->setColor(0.9, 0.1, 0.1);
-		if(i==0)
-			agent->setColor(0.1, 0.9, 0.1);
+		agent->setColor(0.1, 0.9, 0.1);
+
+		// agent->setD( d_pos[0], d_pos[1]);
+		// double dir[2] = { d_pos[0]-agent_pos[0], d_pos[1]-agent_pos[1]};
+		// double cur_rad = CoorToRadian(dir);
+		// agent->setQy(dir[0], dir[1]);
+		// agent->setQx(0.0, -1.0);
+		// agent->setFront(cur_rad);
+		// agent->setColor(0.9, 0.1, 0.1);
+		// if(i==0)
+		// 	agent->setColor(0.1, 0.9, 0.1);
 
 		addAgent(agent);
 	}

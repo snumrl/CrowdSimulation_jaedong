@@ -119,7 +119,7 @@ void LineIntersection(double* L1, double* L2, double* R)
 
 	R[0] = Dx/D;
 	R[1] = Dy/D;
-	if(D > 0)
+	if(D != 0)
 	{
 		R[2] = 1;
 	}
@@ -143,7 +143,18 @@ void LineIntersection(double* st1, double* ed1, double* st2, double* ed2, double
 	R[1] = Dy/D;
 	if(D != 0)
 	{
-		R[2] = 1;
+		double t1_x, t1_y, t2_x, t2_y;
+		t1_x = (R[0] - st1[0]) / (ed1[0] - st1[0]);
+		t1_y = (R[1] - st1[1]) / (ed1[1] - st1[1]);
+		t2_x = (R[0] - st2[0]) / (ed2[0] - st2[0]);
+		t2_y = (R[0] - st2[0]) / (ed2[0] - st2[0]);
+		if(t1_x >= 0.0 && t1_x <= 1.0 && t1_y >= 0.0 && t1_y <= 1.0 && t2_x >= 0.0 && t2_x <= 1.0 && t2_y >= 0.0 && t2_y <= 1.0)
+		{
+			R[2] = 1;
+		}
+		else{
+			R[2] = 0;
+		}
 	}
 	else
 		R[2] = 0;

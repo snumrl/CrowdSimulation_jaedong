@@ -9,13 +9,14 @@ using namespace std;
 
 #define PI 3.141592
 
-#define w_target 10.0
-#define w_col -100.0
-#define w_smooth_a -1.0
-#define w_smooth_w -1.0
-#define w_pref_v -2.0
-
-#define w_bubble -0.0
+#define w_target 5.0
+#define w_col -5
+#define w_smooth_v -0.0
+#define w_smooth_w -0.0
+#define w_pref_v 0.0
+#define w_pref_w -0.0
+#define w_pref_dir 0.01
+#define w_bubble 0.0
 
 Env::Env()
 {
@@ -34,6 +35,7 @@ const vector<Agent*> & Env::Observe()
 	{
 		Agent* cur_agent;
 		cur_agent = _agents.at(i);
+		#pragma omp parallel for
 		for(int j=0; j<agent_num; j++)
 		{
 			if(i==j)
@@ -47,6 +49,7 @@ const vector<Agent*> & Env::Observe()
 			cur_agent->setVision(other_data, false);
 		}
 
+		#pragma omp parallel for
 		for(int j=0; j<obstacle_num; j++)
 		{
 			Obstacle* obs;
@@ -57,6 +60,7 @@ const vector<Agent*> & Env::Observe()
 			cur_agent->setVision(obs_data, false);
 		}
 
+		#pragma omp parallel for
 		for(int j=0; j<wall_num; j++)
 		{
 			Wall* wall;
@@ -82,27 +86,33 @@ void Env::Update()
 {
 	srand((unsigned int)time(0));
 
-	double score = 1.0;
+	double score = 0.0;
 
 	double prev_dist = getTargetDist();
+
 
 	Agent* agent_;
 	for(int i=0; i<agent_num; i++){
 		agent_ = _agents.at(i);
 		agent_->Action();
-		agent_->visionReset();
-		// if(Dist(agent_->getP(), agent_->getD()) < 4.0)
-		// 	agent_->setD( -30 + rand()%60, -20 + rand()%40);
 	}
 
-	double next_dist = getTargetDist();
-	double target_dist = prev_dist - next_dist;
-	double target_score = getTargetScore(target_dist);
+	double cur_dist = getTargetDist();
+	double diff_dist = prev_dist - cur_dist;
 
-	double prefV_score = getPrefVScore(_agents.at(0));
+	double target_score = getTargetScore(diff_dist);
+	double prefV_score = getPrefScore(_agents.at(0));
+	double dir_score = getDirScore(_agents.at(0));
 	double smooth_score = getSmoothScore(_agents.at(0));
+	double bubble_score = getBubbleScore(_agents.at(0));
 
-	score = target_score * prefV_score * smooth_score;
+	for(int i=0; i<agent_num; i++){
+		agent_ = _agents.at(i);
+		agent_->setVisionVel();
+		agent_->visionReset();
+		// if(Dist(agent_->getP(), agent_->getD()) < 4.0)
+		// 	agent_->setD( -24 + rand()%48, -16 + rand()%32);
+	}
 
 	#pragma omp parallel for
 	for(int i=0; i<agent_num; i++)
@@ -155,26 +165,31 @@ void Env::Update()
 			}
 		}
 
-		if(isCol)
+		if(isCol){
 			cur_agent->setCol(true);
+			// std::cout << i << " : col" << std::endl;
+		}
 	}
 
-	double col_score = 1.0;
-	if(_agents.at(0)->getCol()){
-		score = w_col * 1.0;
+	double col_score = 0.0;
+	if(_agents.at(0)->getCol())
+		col_score = w_col;
 
-		col_score = w_col * 1.0;
-		target_score = 1.0;
-		prefV_score = 1.0;
-		smooth_score = 1.0;
-	}
+	score += target_score;
+	score += prefV_score;
+	score += smooth_score;
+	score += bubble_score;
+	score += col_score;
+	score += dir_score;
+
+	_reward = score;
 
 	_reward_sep[0] = target_score;
 	_reward_sep[1] = prefV_score;
 	_reward_sep[2] = smooth_score;
 	_reward_sep[3] = col_score;
-
-	_reward = score;
+	_reward_sep[4] = bubble_score;
+	_reward_sep[5] = dir_score;
 }
 
 void Env::setAction(int i, double w, double a_x, double a_y)
@@ -206,107 +221,160 @@ bool Env::isCol()
 
 double Env::getTargetDist()
 {
-	double d = Dist(_agents.at(0)->getD(), _agents.at(0)->getP());
-	return d;
+	Agent* agent_ = _agents.at(0);
+	double dist = Dist(agent_->getP(), agent_->getD());
 }
 
 double Env::getTargetScore(double dist)
 {
-	double score = exp(w_target*dist);
+	// double dist_square = dist*dist;
+
+	double score = 0.0;
+	if(dist > 0.0){
+		score = w_target * dist;
+	}
+	else{
+		score = w_target * dist;
+	}
 
 	return score;
 }
 
 double Env::getSmoothScore(Agent* agent_)
 {
-	double* cur_a = agent_->getA();
+	double* cur_v = agent_->getV();
+	double* prev_v = agent_->getVprev();
 	double cur_w = agent_->getW();
+	double prev_w = agent_->getWprev();
 
-	double smooth_a = 1.0;
-	double smooth_w = 1.0;
+	double cur_v_ = sqrt(cur_v[0]*cur_v[0] + cur_v[1]*cur_v[1]);
+	// std::cout << "v : " << cur_v[0] << ", " << cur_v[1] << std::endl;
+	// std::cout << "v : " << cur_v_ << std::endl;
 
-	double prefAc[2];
-	prefAc[0] = 0.0;
-	prefAc[1] = 0.0;
+	double smooth_v = 0.0;
+	double smooth_w = 0.0;
 
-	double a_dist = Dist(cur_a, prefAc);
-	double a_bound = 0.2;
-	if(a_dist > a_bound){
-		smooth_a = exp(w_smooth_a*(a_dist-a_bound)*(a_dist-a_bound));
-	}
+	double v_dist = Dist(cur_v, prev_v);
+	smooth_v = w_smooth_v*v_dist;
 
-	double w_bound = 1.0;
-	if(cur_w > w_bound){
-		smooth_w = exp(w_smooth_w*(cur_w-w_bound)*(cur_w-w_bound));
-	}
-	if(cur_w < -w_bound){
-		smooth_w = exp(w_smooth_w*(cur_w+w_bound)*(cur_w+w_bound));
-	}
+	double w_dist = fabs(cur_w - prev_w);
+	smooth_w = w_smooth_w*w_dist;
 
-	return smooth_a * smooth_w;
+	return smooth_v + smooth_w;
 }
 
-double Env::getPrefVScore(Agent* agent_)
+double Env::getPrefScore(Agent* agent_)
 {
 	double* cur_v = agent_->getV();
-	double pref_v = 1.0;
+	double cur_w = agent_->getW();
 
-	double prefV1[2];
-	prefV1[0] = 0.0;
-	prefV1[1] = 1.0;
+	double pref_v = 0.0;
+	double pref_w = 0.0;
 
-	double prefV2[2];
-	prefV2[0] = -0.3;
-	prefV2[1] = 0.0;
+	// double prefV1[2];
+	// prefV1[0] = 0.0;
+	// prefV1[1] = 1.0;
 
-	double prefV3[2];
-	prefV3[0] = 0.3;
-	prefV3[1] = 0.0;
+	// double prefV2[2];
+	// prefV2[0] = -1.0;
+	// prefV2[1] = 0.0;
 
-	double prefV4[2];
-	prefV4[0] = 0.0;
-	prefV4[1] = 0.0;
+	// double prefV3[2];
+	// prefV3[0] = 1.0;
+	// prefV3[1] = 0.0;
 
-	double dist1 = Dist(cur_v, prefV1);
-	double dist2 = Dist(cur_v, prefV2);
-	double dist3 = Dist(cur_v, prefV3);
-	double dist4 = Dist(cur_v, prefV4);
-	double dist5 = fabs(cur_v[0]);
-	double dist6 = fabs(cur_v[1]);
+	// double prefV4[2];
+	// prefV4[0] = 0.0;
+	// prefV4[1] = 0.0;
 
-	if(cur_v[1] >= prefV1[1])
-		dist5 = dist1;
+	// double dist1 = Dist(cur_v, prefV1);
+	// double dist2 = Dist(cur_v, prefV2);
+	// double dist3 = Dist(cur_v, prefV3);
+	// double dist4 = Dist(cur_v, prefV4);
+	// double dist5 = fabs(cur_v[0]);
+	// double dist6 = fabs(cur_v[1]);
 
-	if(cur_v[1] < 0.0)
-		dist5 = 10.0;
+	// if(cur_v[1] >= prefV1[1])
+	// 	dist5 = dist1;
+	// if(cur_v[1] < 0.0)
+	// 	dist5 = 10.0;
+	// if(cur_v[0] <= prefV2[0] && cur_v[1] < prefV1[1])
+	// 	dist6 = dist2;
+	// if(cur_v[0] >= prefV3[0] && cur_v[1] < prefV1[1])
+	// 	dist6 = dist3;
 
-	if(cur_v[0] <= prefV2[0])
-		dist6 = dist2;
+	// double minDist = dist1;
+	// if(dist2 < minDist)
+	// 	minDist = dist2;
+	// if(dist3 < minDist)
+	// 	minDist = dist3;
+	// if(dist4 < minDist)
+	// 	minDist = dist4;
+	// if(dist5 < minDist)
+	// 	minDist = dist5;
+	// if(dist6 < minDist)
+	// 	minDist = dist6;
 
-	if(cur_v[0] >= prefV3[0])
-		dist6 = dist3;
+	// if(minDist > 0.3)
+	// 	pref_v = w_pref_v*(minDist- 0.3);
 
-	double minDist = dist1;
-	if(dist2 < minDist)
-		minDist = dist2;
-	if(dist3 < minDist)
-		minDist = dist3;
-	if(dist4 < minDist)
-		minDist = dist4;
-	if(dist5 < minDist)
-		minDist = dist5;
-	if(dist6 < minDist)
-		minDist = dist6;
+	double origin[2] = {0.0, 0.0};
+	double tmp_v_dist = Dist(origin, cur_v);
+	if(tmp_v_dist > 1.0){
+		pref_v = w_pref_v*(tmp_v_dist - 1.0);
+	}
 
-	// std::cout << "v : " << cur_v[0] << ", " << cur_v[1] << std::endl;
+	double origin_ = 0.0;
+	double tmp_w_dist = fabs(origin_ - cur_w);
+	if(tmp_w_dist > 1.5){
+		pref_w = w_pref_w*(tmp_w_dist - 1.5);
+	}
 
-	pref_v = exp(w_pref_v * (minDist) * (minDist));
+	return pref_v + pref_w;
+}
 
-	return pref_v;
+double Env::getDirScore(Agent* agent_)
+{
+	// double pref_dir = 0.0;
+
+	double* cur_v = agent_->getV();
+
+	double cur_v_len = sqrt(cur_v[0]*cur_v[0]+cur_v[1]*cur_v[1]);
+	double cur_v_norm[2] = {cur_v[0]/cur_v_len, cur_v[1]/cur_v_len};
+	double dir[2] = {0.0, 1.0};
+	// pref_dir = w_pref_dir*(-1.0 * tanh(10.0*acos(Dot(cur_v_norm, dir))));
+
+	// return pref_dir;
+	double pref_dir = 0.0;
+
+	double* cur_d = agent_->getD();
+	double* cur_p = agent_->getP();
+	double vec[2];
+
+	vec_sub_vec(cur_d, cur_p, vec);
+	double vec_len = sqrt(vec[0]*vec[0]+vec[1]*vec[1]);
+	double vec_norm[2] = {vec[0]/vec_len, vec[1]/vec_len};
+
+	double* cur_q = agent_->getQy();
+
+	pref_dir = w_pref_dir*(-1.0 * acos(Dot(cur_q, vec_norm)));
+	// pref_dir = w_pref_dir*(-1.0 * acos(Dot(cur_v_norm, dir)));
+
+	// std::cout << "q : " << acos(Dot(cur_q, vec_norm)) << std::endl;
+	// std::cout << "v : " << acos(Dot(cur_v_norm, dir)) << std::endl;
+	// std::cout << "dir : " << pref_dir << std::endl;
+	// std::cout << std::endl;
+
+	// std::cout << "dir : " << acos(Dot(cur_q, vec_norm)) << std::endl;
+	// std::cout << "dir : " << pref_dir << std::endl;
+
+	return pref_dir;
 }
 
 double Env::getBubbleScore(Agent* agent_)
 {
+	double bubble = 0.0;
+
 	double* cur_vision = agent_->getVision();
 	double vision_depth = agent_->getVisionDepth();
 	int vision_ray = agent_->getVisionRayNum();
@@ -317,15 +385,19 @@ double Env::getBubbleScore(Agent* agent_)
 	for(int i=0; i<vision_ray; i++){
 		if(cur_vision[i] < min_ray)
 			min_ray = cur_vision[i];
+		mean += cur_vision[i];
 	}
-
-	double bScore = (double)(vision_depth - min_ray)/vision_depth;
+	double depth_ = mean/(double)vision_ray;
+	depth_ = vision_depth;
+	bubble = w_bubble * (depth_ - min_ray)/depth_;
 
 	// double cov_ = Cov(cur_vision, 45);
 	// double dist = (double)(min_ray)/(double)vision_depth;
 	// double d_of_cov = dist/cov_;
 
-	return w_bubble*bScore*bScore;
+	// std::cout << "bubble : " << bubble <<  std::endl;
+
+	return bubble;
 }
 
 double Env::getReward()

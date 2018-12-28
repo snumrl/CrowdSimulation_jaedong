@@ -44,12 +44,12 @@ def train(num_timesteps, path=None):
 	print("prev path : ", path)
 	pi = pposgd_simple.learn(env, policy_fn,
 			max_timesteps=num_timesteps,
-			timesteps_per_actorbatch=512,
+			timesteps_per_actorbatch=1024,
 			clip_param=0.2, entcoeff=0.0,
 			optim_epochs=10,
-			optim_stepsize=1e-4,
+			optim_stepsize=5e-5,
 			optim_batchsize=64,
-			gamma=0.95,
+			gamma=0.99,
 			lam=0.95,
 			schedule='linear',
 			model_path=path
@@ -57,15 +57,13 @@ def train(num_timesteps, path=None):
 
 	env.env.plotSave()
 
-	# U.save_state("../data/ckpt/network/test001")
-
 	return pi
 
 def main():
 	logger.configure()
-	# path_ = None
-	path_ = "../data/ckpt/network/1127a/15.0"
-	train(num_timesteps=1e6, path=path_)
+	path_ = None
+	# path_ = "../data/ckpt/network/1226/25.0"
+	train(num_timesteps=1e7, path=path_)
 
 if __name__ == '__main__':
 	main()

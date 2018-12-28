@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <ctime>
 #include <omp.h>
@@ -81,32 +82,82 @@ void Hallway::ResetEnv()
 
 	srand((unsigned int)time(0));
 
-	for(int i=0; i<obstacle_num; i++)
-	{
-		double obs_pos[2];
-		obs_pos[0] = -10.0 + rand()%20;
-		obs_pos[1] = -5.0 + rand()%10;
+	bool isRand = false;
+	if(rand()%4 == 0){
+		isRand = true;
+	}
 
-		double obs_r[2];
-		obs_r[0] = (10 + rand()%30)/20.0;
-		obs_r[1] = (10 + rand()%30)/20.0;
+	double obs_x = -4 + rand()%16;
+	if(isRand){
+		for(int i=0; i<obstacle_num; i++)
+		{
+			double obs_pos[2];
+			obs_pos[0] = -12.0 + rand()%20;
+			// obs_pos[1] = -4.0 + rand()%8;
+			obs_pos[1] = 24;
 
-		double tmp;
-		if(obs_r[0] < obs_r[1]){
-			tmp = obs_r[0];
-			obs_r[0] = obs_r[1];
-			obs_r[1] = tmp;
+			double obs_r[2];
+			obs_r[0] = (10 + rand()%10)/20.0;
+			obs_r[1] = (10 + rand()%10)/20.0;
+
+			Obstacle* obs = new Obstacle(obs_r, obs_pos); // p q d
+			addObstacle(obs);
 		}
+	}
+	else{
+		for(int i=0; i<obstacle_num; i++)
+		{
+			double obs_pos[2];
+			double obs_r[2];
 
-		Obstacle* obs = new Obstacle(obs_r, obs_pos); // p q d
-		addObstacle(obs);
+			if(i==0){
+				obs_pos[0] = obs_x;
+				obs_pos[1] = 3.6;
+
+				obs_r[0] = 2.8 + (rand()%3)*0.1;
+				obs_r[1] = 2.8 + (rand()%3)*0.1;
+			}
+			else if(i==1){
+				obs_pos[0] = obs_x;
+				obs_pos[1] = -3.6;
+
+				obs_r[0] = 2.8 + (rand()%3)*0.1;
+				obs_r[1] = 2.8 + (rand()%3)*0.1;
+			}
+			else{
+				while(true){
+					obs_pos[0] = -10.0 + rand()%18;
+					if(obs_pos[0] < obs_x - 5.0 || obs_pos[0] > obs_x + 5.0)
+						break;
+				}
+
+				obs_pos[1] = -4.0 + rand()%8;
+
+				obs_r[0] = (10 + rand()%10)/20.0;
+				obs_r[1] = (10 + rand()%10)/20.0;
+			}
+
+			double tmp;
+			if(obs_r[0] < obs_r[1]){
+				tmp = obs_r[0];
+				obs_r[0] = obs_r[1];
+				obs_r[1] = tmp;
+			}
+
+			Obstacle* obs = new Obstacle(obs_r, obs_pos); // p q d
+			addObstacle(obs);
+		}
 	}
 
 	for(int i=0; i<agent_num; i++)
 	{
 		double agent_r[2];
 		agent_r[0] = (3 + rand()%7)/10.0;
-		agent_r[1] = (3 + rand()%7)/10.0;
+		agent_r[1] = (3 + rand()%2)/10.0;
+		// agent_r[0] = (3 + rand()%2)/10.0;
+		// agent_r[1] = agent_r[0];
+		// agent_r[0] = 1.0;
+		// agent_r[1] = 0.3;
 
 		double tmp;
 		if(agent_r[0] < agent_r[1]){
@@ -123,19 +174,20 @@ void Hallway::ResetEnv()
 		while(true)
 		{
 			if(i%2==0){
-				agent_pos[0] = 6.0 + rand()%8;
-				agent_pos[1] = -4.0 + rand()%8;
+				agent_pos[0] = obs_x + 4.0 + (rand()%80)*0.1;
+				// agent_pos[0] = 0.0;
+				agent_pos[1] = -2.5 + (rand()%50)*0.1;
 			}
 			else{
-				agent_pos[0] = -14.0 + rand()%8;
-				agent_pos[1] = -4.0 + rand()%8;
+				agent_pos[0] = 12.0 + (rand()%160)*0.1;
+				agent_pos[1] = -2.5 + (rand()%50)*0.1;
 			}
 
 			col = false;
 			int start_idx = 0;
 			for(int j=start_idx; j<i; j++)
 			{
-				double boundary = (getAgent(j)->getR())[0] + agent_r[0] + 0.1;
+				double boundary = (getAgent(j)->getR())[0] + agent_r[0] + 0.5;
 				if(Dist(agent_pos, getAgent(j)->getP()) < boundary)
 				{
 					col = true;
@@ -147,7 +199,7 @@ void Hallway::ResetEnv()
 			{
 				for(int j=0; j<obstacle_num; j++)
 				{
-					double boundary = getObstacle(j)->getR()[0] + agent_r[0];
+					double boundary = getObstacle(j)->getR()[0] + agent_r[0] + 1.0;
 					if(Dist(agent_pos, getObstacle(j)->getP()) < boundary)
 					{
 						col = true;
@@ -158,6 +210,8 @@ void Hallway::ResetEnv()
 
 			if(col == false)
 				break;
+
+			std::cout << "agent " << i << " : " << agent_pos[0] << "," << agent_pos[1] << std::endl;
 		}
 
 		agent->setP(agent_pos[0], agent_pos[1]);
@@ -166,16 +220,19 @@ void Hallway::ResetEnv()
 		bool d_col = false;
 		double d_pos[2];
 		while(true){
-			d_col = false;
 			if(i%2==0){
-				d_pos[0] = -14 + rand()%4;
-				d_pos[1] = -4 + rand()%8;
+				d_pos[0] = -24 + rand()%4;
+				d_pos[1] = -5 + rand()%10;
 			}
 			else{
-				d_pos[0] = 10 + rand()%4;
-				d_pos[1] = -4 + rand()%8;
+				d_pos[0] = 20 + rand()%4;
+				d_pos[1] = agent_pos[1];
+			}
+			if(i==0){
+				d_pos[0] = -20 + rand()%4;
 			}
 
+			d_col = false;
 			for(int j=0; j<obstacle_num; j++)
 			{
 				double boundary = getObstacle(j)->getR()[0] + 0.5;
@@ -191,20 +248,50 @@ void Hallway::ResetEnv()
 
 			if(!d_col)
 				break;
+
+			std::cout << "goal " << i << " : " << agent_pos[0] << "," << agent_pos[1] << std::endl;
+
 		}
 
-		agent->setD( d_pos[0], d_pos[1]);
+		// double cur_front = (rand()%314)/100.+3.14*0.5;
+		// double y_coord[2];
+		// double x_coord[2];
+		// RadianToCoor(cur_front, y_coord);
+		// RadianToCoor(cur_front-0.5*3.141592, x_coord);
+
+		// agent->setFront(cur_front);
+		// agent->setQy(y_coord[0], y_coord[1]);
+		// agent->setQx(x_coord[0], x_coord[1]);
+		// agent->setD( d_pos[0], d_pos[1]);
+		// agent->setColor(0.9, 0.5, 0.1);
+
 		if(i%2==0){
+			// double cur_front = ((rand()%628)/100.0)-3.14;
+			// double cur_front = 0.5*3.14 + ((rand()%314)/100.0);
+			double cur_front = 3.14;
+			double y_coord[2];
+			double x_coord[2];
+			RadianToCoor(cur_front, y_coord);
+			RadianToCoor(cur_front-0.5*3.141592, x_coord);
+
+			agent->setFront(cur_front);
+			agent->setQy(y_coord[0], y_coord[1]);
+			agent->setQx(x_coord[0], x_coord[1]);
+			agent->setD( d_pos[0], d_pos[1]);
 			agent->setColor(0.1, 0.9, 0.1);
-			agent->setQy(-1.0, 0.0);
-			agent->setQx(0.0, 11.0);
-			agent->setFront(3.141592);
 		}
 		else{
+			double cur_front = (rand()%314)/100.- 3.14*0.5;
+			double y_coord[2];
+			double x_coord[2];
+			RadianToCoor(cur_front, y_coord);
+			RadianToCoor(cur_front-0.5*3.141592, x_coord);
+
+			agent->setFront(cur_front);
+			agent->setQy(y_coord[0], y_coord[1]);
+			agent->setQx(x_coord[0], x_coord[1]);
+			agent->setD( d_pos[0], d_pos[1]);
 			agent->setColor(0.9, 0.1, 0.1);
-			agent->setQy(1.0, 0.0);
-			agent->setQx(0.0, -1.0);
-			agent->setFront(0.0);
 		}
 		if(i==0)
 			agent->setColor(0.9, 0.5, 0.1);

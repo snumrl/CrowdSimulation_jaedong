@@ -32,6 +32,7 @@ class Hallway:
 			state['front'] = agent_obs[i]['front']
 			state['color'] = np.array(agent_obs[i]['color'])
 			state['vision'] = np.array(agent_obs[i]['sensor_state'])
+			state['vision_vel'] = np.array(agent_obs[i]['velocity_state'])
 			state['offset'] = np.array(agent_obs[i]['offset_data'])
 			self.agents.append(Agent(state))
 
@@ -73,6 +74,7 @@ class Hallway:
 			front = agent_obs[i]['front']
 			color = np.array(agent_obs[i]['color'])
 			vision = np.array(agent_obs[i]['sensor_state'])
+			vision_vel = np.array(agent_obs[i]['velocity_state'])
 			offset = np.array(agent_obs[i]['offset_data'])
 			self.agents[i].setR(r)
 			self.agents[i].setP(p)
@@ -80,6 +82,7 @@ class Hallway:
 			self.agents[i].setFront(front)
 			self.agents[i].setColor(color)
 			self.agents[i].setVision(vision)
+			self.agents[i].setVisionVel(vision_vel)
 			self.agents[i].setOffset(offset)
 
 		obs_data = obs['obstacle']

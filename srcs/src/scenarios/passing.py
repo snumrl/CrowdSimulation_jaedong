@@ -18,7 +18,7 @@ class Passing:
 		self.name = 'Passing'
 		self.init_agents(obs['agent'])
 		self.init_obstacles(obs['obstacle'])
-		self.init_walls()
+		self.init_walls(obs['wall'])
 		self.init_record()
 
 	def init_agents(self, agent_obs):
@@ -32,11 +32,8 @@ class Passing:
 			state['front'] = agent_obs[i]['front']
 			state['color'] = np.array(agent_obs[i]['color'])
 			state['vision'] = np.array(agent_obs[i]['sensor_state'])
+			state['vision_vel'] = np.array(agent_obs[i]['velocity_state'])
 			state['offset'] = np.array(agent_obs[i]['offset_data'])
-			# state['v_x'] = agent_obs[i]['v_x']
-			# state['v_y'] = agent_obs[i]['v_y']
-			# state['d_map'] = np.array(agent_obs[i]['d_map'])
-			# state['v_map'] = np.array(agent_obs[i]['v_map'])
 			self.agents.append(Agent(state))
 
 	def init_obstacles(self, obstacle_obs):
@@ -49,10 +46,15 @@ class Passing:
 			state['front'] = np.array(obstacle_obs[i]['front'])
 			self.obstacles.append(Obstacle(state))
 
-	def init_walls(self):
+	def init_walls(self, wall_obs):
 		self.walls = []
-		# self.walls.append(Wall([-24, 14], [1, 0], 48))
-		# self.walls.append(Wall([-24, -14], [1, 0], 48))
+		self.wall_count = len(wall_obs)
+		for i in range(self.wall_count):
+			state={}
+			state['p'] = np.array(wall_obs[i]['p'])
+			state['w'] =wall_obs[i]['w'][0]
+			state['h'] = wall_obs[i]['h'][0]
+			self.walls.append(Wall(state))
 
 	def init_record(self):
 		self.record_buffer_p = queue.Queue(maxsize=5000)
@@ -72,6 +74,7 @@ class Passing:
 			front = agent_obs[i]['front']
 			color = np.array(agent_obs[i]['color'])
 			vision = np.array(agent_obs[i]['sensor_state'])
+			vision_vel = np.array(agent_obs[i]['velocity_state'])
 			offset = np.array(agent_obs[i]['offset_data'])
 			self.agents[i].setR(r)
 			self.agents[i].setP(p)
@@ -79,6 +82,7 @@ class Passing:
 			self.agents[i].setFront(front)
 			self.agents[i].setColor(color)
 			self.agents[i].setVision(vision)
+			self.agents[i].setVisionVel(vision_vel)
 			self.agents[i].setOffset(offset)
 
 		obs_data = obs['obstacle']
@@ -86,6 +90,12 @@ class Passing:
 			self.obstacles[i].setP(obs_data[i]['p'])
 			self.obstacles[i].setR(obs_data[i]['r'])
 			self.obstacles[i].setFront(obs_data[i]['front'])
+
+		wall_data = obs['wall']
+		for i in range(self.wall_count):
+			self.walls[i].setP(wall_data[i]['p'])
+			self.walls[i].setW(wall_data[i]['w'][0])
+			self.walls[i].setH(wall_data[i]['h'][0])
 
 	def render(self, vision=False, trajectory=False):
 		for i in range(self.obstacle_count):

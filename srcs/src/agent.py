@@ -27,6 +27,7 @@ class Agent(CrowdObject):
 		state['color'] = self.color
 		state['front'] = self.front
 		state['vision'] = self.vision
+		state['vision_vel'] = self.vision_vel
 		state['offset'] = self.offset
 
 		return copy.copy(state)
@@ -57,10 +58,17 @@ class Agent(CrowdObject):
 
 	def setVision(self, v = None):
 		if v is None:
-			v = np.ndarray(shape=(3, 41))
+			v = np.ndarray(shape=(45))
 			v.fill(0)
 
 		self.vision = v
+
+	def setVisionVel(self, v = None):
+		if v is None:
+			v = np.ndarray(shape=(3, 41))
+			v.fill(0)
+
+		self.vision_vel = v
 
 	def setOffset(self, o = None):
 		if o is None:
@@ -77,6 +85,7 @@ class Agent(CrowdObject):
 		self.front = state['front']
 		self.offset = state['offset']
 		self.setVision(state['vision'])
+		self.setVisionVel(state['vision_vel'])
 
 		self.trajectory = []
 		self.trajectory_q = []
@@ -134,13 +143,25 @@ class Agent(CrowdObject):
 		glPopMatrix()
 
 	def render_vision(self):
+		vision_depth = 7.0/3.0
 		glLineWidth(2)
-		glColor3f(0.0, 0.0, 1.0)
 		for i in range(36):
 			angle = mMath.DegreeToRadian((i+0.5)*10.0 - 180.0 + 90.0)
+			if self.vision_vel[i] < -3.0:
+				self.vision_vel[i] = -3.0
+			if self.vision_vel[i] > 3.0:
+				self.vision_vel[i] = 3.0
+
+			if self.vision_vel[i] < 0.0:
+				glColor3f(0.7 + 0.1*self.vision_vel[i], 0.3 - 0.1*self.vision_vel[i], 0.0)
+			elif self.vision_vel[i] > 0.0:
+				glColor3f(0.3 + 0.1*self.vision_vel[i], 0.7 - 0.1*self.vision_vel[i], 0.0)
+			else:
+				glColor3f(0.5, 0.5, 0.0)
+
 			glBegin(GL_LINES)
 			glVertex3f(self.offset[i]*math.cos(angle), self.offset[i]*math.sin(angle), 0)
-			glVertex3f((self.offset[i]+5.0*self.vision[i])*math.cos(angle), (self.offset[i]+5.0*self.vision[i])*math.sin(angle), 0)
+			glVertex3f(vision_depth*self.vision[i]*math.cos(angle), vision_depth*self.vision[i]*math.sin(angle), 0)
 			glEnd()
 
 

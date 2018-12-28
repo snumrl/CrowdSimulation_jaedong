@@ -19,6 +19,48 @@ Passing::Passing(int agent_n, int obs_n)
 
 void Passing::initWalls()
 {
+	wall_num = 5;
+
+	double p1[2] = {0.0, 10.0};
+	double w1 = 48.0;
+	double h1 = 12.0;
+	addWall(new Wall(p1, w1, h1));
+
+	double p2[2] = {0.0, -10.0};
+	double w2 = 48.0;
+	double h2= 12.0;
+	addWall(new Wall(p2, w2, h2));
+
+	double p3[2] = {-6.0, 2.2};
+	double w3 = 4.0;
+	double h3 = 1.0;
+	addWall(new Wall(p3, w3, h3));
+
+	double p4[2] = {-6.0, 0.0};
+	double w4 = 4.0;
+	double h4= 1.0;
+	addWall(new Wall(p4, w4, h4));
+
+	double p5[2] = {-6.0, -2.2};
+	double w5 = 4.0;
+	double h5= 1.0;
+	addWall(new Wall(p5, w5, h5));
+
+	double p6[2] = {2.0, 2.2};
+	double w6 = 4.0;
+	double h6 = 1.0;
+	addWall(new Wall(p6, w6, h6));
+
+	double p7[2] = {2.0, 0.0};
+	double w7 = 4.0;
+	double h7= 1.0;
+	addWall(new Wall(p7, w7, h7));
+
+	double p8[2] = {2.0, -2.2};
+	double w8 = 4.0;
+	double h8= 1.0;
+	addWall(new Wall(p8, w8, h8));
+
 	wall_num = _walls.size();
 }
 
@@ -36,130 +78,6 @@ Passing::~Passing()
 void Passing::initEvaluation()
 {
 	srand((unsigned int)time(0));
-
-	for(int k=0; k<eval_set_num; k++)
-	{
-		vector<double> cur_obs_p;
-		vector<double> cur_obs_r;
-		for(int i=0; i<obstacle_num; i++)
-		{
-			double obs_pos[2];
-			obs_pos[0] = -18.0 + 10*(i%4);
-			obs_pos[1] = -18.0 + 9*(i/4);
-
-			double obs_r[2];
-			obs_r[0] = (10 + rand()%60)/20.0;
-			obs_r[1] = (10 + rand()%60)/20.0;
-
-			double tmp;
-			if(obs_r[0] < obs_r[1]){
-				tmp = obs_r[0];
-				obs_r[0] = obs_r[1];
-				obs_r[1] = tmp;
-			}
-
-			cur_obs_p.push_back(obs_pos[0]);
-			cur_obs_p.push_back(obs_pos[1]);
-			cur_obs_r.push_back(obs_r[0]);
-			cur_obs_r.push_back(obs_r[1]);
-		}
-		eval_obs_p.push_back(cur_obs_p);
-		eval_obs_r.push_back(cur_obs_r);
-
-		vector<double> cur_agent_p;
-		vector<double> cur_agent_r;
-		vector<double> cur_agent_d;
-		for(int i=0; i<agent_num; i++)
-		{
-			double agent_r[2];
-			agent_r[0] = (10 + rand()%20)/20.0;
-			agent_r[1] = (10 + rand()%20)/20.0;
-
-			double tmp;
-			if(agent_r[0] < agent_r[1]){
-				tmp = agent_r[0];
-				agent_r[0] = agent_r[1];
-				agent_r[1] = tmp;
-			}
-
-			// agent_r[1] = agent_r[0];
-
-			bool col = false;
-			double agent_pos[2];
-			while(true)
-			{
-				agent_pos[0] = 20.0 + rand()%4;
-				agent_pos[1] = -12.0 + rand()%24;
-
-				col = false;
-				int start_idx = 0;
-				for(int j=start_idx; j<i; j++)
-				{
-					double boundary = cur_agent_r.at(j*2) + agent_r[0] + 0.1;
-					double tmp_p[2];
-					tmp_p[0] = cur_agent_p.at(j*2);
-					tmp_p[1] = cur_agent_p.at(j*2+1);
-					if(Dist(agent_pos, tmp_p) < boundary)
-					{
-						col = true;
-						break;
-					}
-				}
-
-				if(col == false)
-				{
-					for(int j=0; j<obstacle_num; j++)
-					{
-						double boundary = cur_obs_r.at(j*2) + agent_r[0];
-						double tmp_p[2];
-						tmp_p[0] = cur_obs_p.at(j*2);
-						tmp_p[1] = cur_obs_p.at(j*2+1);
-						if(Dist(agent_pos, tmp_p) < boundary)
-						{
-							col = true;
-							break;
-						}
-					}
-				}
-
-				if(col == false)
-					break;
-			}
-
-			bool d_col = false;
-			double agent_d[2];
-			while(true){
-				d_col = false;
-				agent_d[0] = -15 + rand()%30;
-				agent_d[1] = -15 + rand()%30;
-
-				for(int j=0; j<obstacle_num; j++)
-				{
-					double boundary = cur_obs_r.at(j*2) + 0.5;
-					double tmp_p[2];
-					tmp_p[0] = cur_obs_p.at(j*2);
-					tmp_p[1] = cur_obs_p.at(j*2+1);
-					if(Dist(agent_d, tmp_p) < boundary)
-					{
-						d_col = true;
-						break;
-					}
-				}
-				if(!d_col)
-					break;
-			}
-
-			cur_agent_p.push_back(agent_pos[0]);
-			cur_agent_p.push_back(agent_pos[1]);
-			cur_agent_r.push_back(agent_r[0]);
-			cur_agent_r.push_back(agent_r[1]);
-			cur_agent_d.push_back(agent_d[0]);
-			cur_agent_d.push_back(agent_d[0]);
-		}
-		eval_agent_p.push_back(cur_agent_p);
-		eval_agent_r.push_back(cur_agent_r);
-		eval_agent_d.push_back(cur_agent_d);
-	}
 }
 
 void Passing::Reset(int idx)
@@ -179,40 +97,6 @@ void Passing::ResetEval(int idx)
 	for(vector< Obstacle* >::iterator it = _obstacles.begin() ; it != _obstacles.end(); it++)
 		delete (*it);
 	_obstacles.clear();
-
-	for(int i=0; i<agent_num; i++)
-	{
-		double agent_r[2];
-		agent_r[0] = eval_agent_r.at(idx).at(i*2);
-		agent_r[1] = eval_agent_r.at(idx).at(i*2+1);
-
-		Agent* agent = new Agent(agent_r);
-		agent->setId(i);
-		agent->setP(eval_agent_p.at(idx).at(i*2), eval_agent_p.at(idx).at(i*2+1));
-		agent->setPprev(eval_agent_p.at(idx).at(i*2), eval_agent_p.at(idx).at(i*2+1));
-		agent->setD(eval_agent_d.at(idx).at(i*2), eval_agent_d.at(idx).at(i*2+1));
-		agent->setQy(1.0, 0.0);
-		agent->setQx(0.0, -1.0);
-		agent->setFront(0.0);
-		agent->setColor(0.9, 0.1, 0.1);
-		addAgent(agent);
-	}
-
-	for(int i=0; i<obstacle_num; i++)
-	{
-		double obstacle_r[2];
-		obstacle_r[0] = eval_obs_r.at(idx).at(i*2);
-		obstacle_r[1] = eval_obs_r.at(idx).at(i*2+1);
-
-		double obstacle_p[2];
-		obstacle_p[0] = eval_obs_p.at(idx).at(i*2);
-		obstacle_p[1] = eval_obs_p.at(idx).at(i*2+1);
-
-		Obstacle* obstacle = new Obstacle(obstacle_p, obstacle_r);
-		addObstacle(obstacle);
-	}
-
-	_cur_step = 0;
 }
 
 void Passing::ResetEnv()
@@ -225,92 +109,65 @@ void Passing::ResetEnv()
 		delete (*it);
 	_obstacles.clear();
 
+	for(vector< Wall* >::iterator it = _walls.begin() ; it != _walls.end(); it++)
+		delete (*it);
+	_walls.clear();
+
 	srand((unsigned int)time(0));
 
-	// for(int i=0; i<8; i++)
-	// {
-	// 	double obs_pos[2];
-	// 	obs_pos[0] = -18.0 + 10*(i%4);
-	// 	obs_pos[1] = -18.0 + 9*(i/4);
+	double p1[2] = {0.0, 10.0};
+	double w1 = 48.0;
+	double h1 = 12.0;
+	addWall(new Wall(p1, w1, h1));
 
-	// 	double obs_r[2];
-	// 	obs_r[0] = (10 + rand()%60)/20.0;
-	// 	obs_r[1] = (10 + rand()%60)/20.0;
+	double p2[2] = {0.0, -10.0};
+	double w2 = 48.0;
+	double h2= 12.0;
+	addWall(new Wall(p2, w2, h2));
 
-	// 	double tmp;
-	// 	if(obs_r[0] < obs_r[1]){
-	// 		tmp = obs_r[0];
-	// 		obs_r[0] = obs_r[1];
-	// 		obs_r[1] = tmp;
-	// 	}
-
-	// 	Obstacle* obs = new Obstacle(obs_pos, obs_r); // p q d
-	// 	addObstacle(obs);
-	// }
-
-	// #pragma omp parallel for
-	for(int i=0; i<10; i++)
+	for(int i=0; i<3; i++)
 	{
-		double obs_pos[2];
-		obs_pos[0] = -16.0 + 3*i;
-		obs_pos[1] = 4.0;
-		if(i>2 && i<6)
-			obs_pos[1] = 6.4;
+		double wall_pos1[2];
+		wall_pos1[0] = -6 + rand()%4;
+		wall_pos1[1] = 2.2 - i*2.2;
 
-		double obs_r[2];
-		obs_r[0] = 3.0;
-		obs_r[1] = 3.0;
+		double w1 = 4.0;
+		double h1 = 0.8;
 
-		Obstacle* obs = new Obstacle(obs_pos, obs_r); // p q d
-		addObstacle(obs);
+		double wall_pos2[2];
+		wall_pos2[0] = 2.0 + rand()%4;
+		wall_pos2[1] = 2.2 - i*2.2;
 
-		obs_pos[0] = -16.0 + 3*i;
-		obs_pos[1] = -4.0;
-		if(i>2 && i<6)
-			obs_pos[1] = -6.4;
+		double w2 = 4.0;
+		double h2 = 0.8;
 
-		obs_r[0] = 3.0;
-		obs_r[1] = 3.0;
-
-		obs = new Obstacle(obs_pos, obs_r); // p q d
-		addObstacle(obs);
+		addWall(new Wall(wall_pos1, w1, h1));
+		addWall(new Wall(wall_pos2, w2, h2));
 	}
 
-	for(int i=0; i<2; i++)
+	for(int i=0; i<0; i++)
 	{
 		double obs_pos[2];
-		obs_pos[0] = 17.0;
-		obs_pos[1] = 7.0;
-		if(i==1)
-			obs_pos[1] = -7.0;
+		obs_pos[0] = -12.0 + rand()%20;
+		obs_pos[1] = -4.0 + rand()%8;
 
 		double obs_r[2];
-		obs_r[0] = 4.0;
-		obs_r[1] = 4.0;
+		obs_r[0] = (10 + rand()%10)/20.0;
+		obs_r[1] = (10 + rand()%10)/20.0;
 
-		Obstacle* obs = new Obstacle(obs_pos, obs_r); // p q d
+		Obstacle* obs = new Obstacle(obs_r, obs_pos); // p q d
 		addObstacle(obs);
 	}
-
-	double obs_pos[2];
-	obs_pos[0] = 23.0;
-	obs_pos[1] = 0.0;
-
-	double obs_r[2];
-	obs_r[0] = 5.0;
-	obs_r[1] = 5.0;
-
-	Obstacle* obs = new Obstacle(obs_pos, obs_r); // p q d
-	addObstacle(obs);
 
 	for(int i=0; i<agent_num; i++)
 	{
 		double agent_r[2];
-		// agent_r[0] = (10 + rand()%20)/20.0;
-		// agent_r[1] = (10 + rand()%20)/20.0;
-
-		agent_r[0] = (10 + rand()%25)/20.0;
-		agent_r[1] = 0.5;
+		agent_r[0] = (3 + rand()%7)/10.0;
+		agent_r[1] = (3 + rand()%2)/10.0;
+		// agent_r[0] = (3 + rand()%2)/10.0;
+		// agent_r[1] = agent_r[0];
+		// agent_r[0] = 1.0;
+		// agent_r[1] = 0.3;
 
 		double tmp;
 		if(agent_r[0] < agent_r[1]){
@@ -319,8 +176,6 @@ void Passing::ResetEnv()
 			agent_r[1] = tmp;
 		}
 
-		// agent_r[1] = agent_r[0];
-
 		Agent* agent = new Agent(agent_r);
 		agent->setId(i);
 
@@ -328,14 +183,21 @@ void Passing::ResetEnv()
 		double agent_pos[2];
 		while(true)
 		{
-			agent_pos[0] = 16.0 + rand()%2;
-			agent_pos[1] = -1.0 + rand()%2;
+			if(i%2==0){
+				agent_pos[0] = 15.0 + (rand()%30)*0.1;
+				// agent_pos[0] = 0.0;
+				agent_pos[1] = -3.0 + (rand()%60)*0.1;
+			}
+			else{
+				agent_pos[0] = 12.0 + (rand()%160)*0.1;
+				agent_pos[1] = -2.5 + (rand()%50)*0.1;
+			}
 
 			col = false;
 			int start_idx = 0;
 			for(int j=start_idx; j<i; j++)
 			{
-				double boundary = (getAgent(j)->getR())[0] + agent_r[0] + 0.1;
+				double boundary = (getAgent(j)->getR())[0] + agent_r[0] + 0.5;
 				if(Dist(agent_pos, getAgent(j)->getP()) < boundary)
 				{
 					col = true;
@@ -347,7 +209,7 @@ void Passing::ResetEnv()
 			{
 				for(int j=0; j<obstacle_num; j++)
 				{
-					double boundary = getObstacle(j)->getR()[0] + agent_r[0];
+					double boundary = getObstacle(j)->getR()[0] + agent_r[0] + 1.0;
 					if(Dist(agent_pos, getObstacle(j)->getP()) < boundary)
 					{
 						col = true;
@@ -358,6 +220,8 @@ void Passing::ResetEnv()
 
 			if(col == false)
 				break;
+
+			std::cout << "agent " << i << " : " << agent_pos[0] << "," << agent_pos[1] << std::endl;
 		}
 
 		agent->setP(agent_pos[0], agent_pos[1]);
@@ -366,12 +230,19 @@ void Passing::ResetEnv()
 		bool d_col = false;
 		double d_pos[2];
 		while(true){
-			d_col = false;
-			// d_pos[0] = -24 + rand()%6;
-			// d_pos[1] = -12 + rand()%24;
-			d_pos[0] = -23 + rand()%3;
-			d_pos[1] = 0;
+			if(i%2==0){
+				d_pos[0] = -24 + rand()%4;
+				d_pos[1] = agent_pos[1];
+			}
+			else{
+				d_pos[0] = 20 + rand()%4;
+				d_pos[1] = agent_pos[1];
+			}
+			if(i==0){
+				d_pos[0] = -16 + rand()%2;
+			}
 
+			d_col = false;
 			for(int j=0; j<obstacle_num; j++)
 			{
 				double boundary = getObstacle(j)->getR()[0] + 0.5;
@@ -381,35 +252,58 @@ void Passing::ResetEnv()
 					break;
 				}
 			}
+
+			if(Dist(d_pos, agent->getP()) < 3.0)
+				d_col = true;
+
 			if(!d_col)
 				break;
+
+			std::cout << "goal " << i << " : " << agent_pos[0] << "," << agent_pos[1] << std::endl;
+
 		}
 
-		agent->setD( d_pos[0], d_pos[1]);
-		double front_rnd = (rand()%20 - 10)*0.1*3.141592;
-		double qy[2];
-		RadianToCoor(front_rnd, qy);
-		double qx[2];
-		RadianToCoor(front_rnd-3.141592/2.0, qx);
-		agent->setQy(qy[0], qy[1]);
-		agent->setQx(qx[0], qx[1]);
-		agent->setFront(front_rnd);
-		agent->setColor(0.9, 0.1, 0.1);
-		if(i==0)
+		// double cur_front = (rand()%314)/100.+3.14*0.5;
+		// double y_coord[2];
+		// double x_coord[2];
+		// RadianToCoor(cur_front, y_coord);
+		// RadianToCoor(cur_front-0.5*3.141592, x_coord);
+
+		// agent->setFront(cur_front);
+		// agent->setQy(y_coord[0], y_coord[1]);
+		// agent->setQx(x_coord[0], x_coord[1]);
+		// agent->setD( d_pos[0], d_pos[1]);
+		// agent->setColor(0.9, 0.5, 0.1);
+
+		if(i%2==0){
+			double cur_front = ((rand()%628)/100.0)-3.14;
+			// double cur_front = 3.14;
+			double y_coord[2];
+			double x_coord[2];
+			RadianToCoor(cur_front, y_coord);
+			RadianToCoor(cur_front-0.5*3.141592, x_coord);
+
+			agent->setFront(cur_front);
+			agent->setQy(y_coord[0], y_coord[1]);
+			agent->setQx(x_coord[0], x_coord[1]);
+			agent->setD( d_pos[0], d_pos[1]);
 			agent->setColor(0.1, 0.9, 0.1);
+		}
+		else{
+			double cur_front = (rand()%314)/100.- 3.14*0.5;
+			double y_coord[2];
+			double x_coord[2];
+			RadianToCoor(cur_front, y_coord);
+			RadianToCoor(cur_front-0.5*3.141592, x_coord);
 
-		// double* dmap = new double[20];
-		// for(int j=0; j<20; j++){
-		// 	dmap[j] = _vision_depth;
-		// }
-
-		// double* vmap = new double[40];
-		// for(int j=0; j<40; j++){
-		// 	vmap[j] = 0.0;
-		// }
-
-		// agent->setDmap(dmap);
-		// agent->setVmap(vmap);
+			agent->setFront(cur_front);
+			agent->setQy(y_coord[0], y_coord[1]);
+			agent->setQx(x_coord[0], x_coord[1]);
+			agent->setD( d_pos[0], d_pos[1]);
+			agent->setColor(0.9, 0.1, 0.1);
+		}
+		if(i==0)
+			agent->setColor(0.9, 0.5, 0.1);
 
 		addAgent(agent);
 	}

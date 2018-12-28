@@ -21,7 +21,7 @@ class Env{
 		int _cur_step = 0;
 		int _max_step = 400;
 		double _reward;
-		double _reward_sep[4];
+		double _reward_sep[6];
 
 		int eval_set_num = 6;
 		vector<vector<double>> eval_agent_p;
@@ -48,7 +48,8 @@ class Env{
 		double getTargetDist();
 		double getTargetScore(double dist);
 		double getSmoothScore(Agent* agent_);
-		double getPrefVScore(Agent* agent_);
+		double getPrefScore(Agent* agent_);
+		double getDirScore(Agent* agent_);
 		double getBubbleScore(Agent* agent_);
 		bool isTerm(bool isTest);
 		bool isCol();

@@ -9,10 +9,10 @@ using namespace std;
 
 #define PI 3.141592
 
-#define w_target 5.0
-#define w_col -5
-#define w_smooth_v -0.0
-#define w_smooth_w -0.0
+#define w_target 4.0
+#define w_col -4
+#define w_smooth_v -0.01
+#define w_smooth_w -0.01
 #define w_pref_v 0.0
 #define w_pref_w -0.0
 #define w_pref_dir 0.01
@@ -358,7 +358,7 @@ double Env::getDirScore(Agent* agent_)
 	double* cur_q = agent_->getQy();
 
 	pref_dir = w_pref_dir*(-1.0 * acos(Dot(cur_q, vec_norm)));
-	// pref_dir = w_pref_dir*(-1.0 * acos(Dot(cur_v_norm, dir)));
+	pref_dir += w_pref_dir*(-1.0 * acos(Dot(cur_v_norm, dir)));
 
 	// std::cout << "q : " << acos(Dot(cur_q, vec_norm)) << std::endl;
 	// std::cout << "v : " << acos(Dot(cur_v_norm, dir)) << std::endl;

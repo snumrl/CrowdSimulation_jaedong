@@ -83,7 +83,7 @@ void Hallway::ResetEnv()
 	srand((unsigned int)time(0));
 
 	bool isRand = false;
-	if(rand()%4 == 0){
+	if(rand()%2 == 0){
 		isRand = true;
 	}
 
@@ -105,6 +105,7 @@ void Hallway::ResetEnv()
 		}
 	}
 	else{
+		double obs_h = -3.0 + rand()%6;
 		for(int i=0; i<obstacle_num; i++)
 		{
 			double obs_pos[2];
@@ -112,14 +113,14 @@ void Hallway::ResetEnv()
 
 			if(i==0){
 				obs_pos[0] = obs_x;
-				obs_pos[1] = 3.6;
+				obs_pos[1] = 3.6 + obs_h;
 
 				obs_r[0] = 2.8 + (rand()%3)*0.1;
 				obs_r[1] = 2.8 + (rand()%3)*0.1;
 			}
 			else if(i==1){
 				obs_pos[0] = obs_x;
-				obs_pos[1] = -3.6;
+				obs_pos[1] = -3.6 + obs_h;
 
 				obs_r[0] = 2.8 + (rand()%3)*0.1;
 				obs_r[1] = 2.8 + (rand()%3)*0.1;
@@ -152,7 +153,7 @@ void Hallway::ResetEnv()
 	for(int i=0; i<agent_num; i++)
 	{
 		double agent_r[2];
-		agent_r[0] = (3 + rand()%7)/10.0;
+		agent_r[0] = (3 + rand()%5)/10.0;
 		agent_r[1] = (3 + rand()%2)/10.0;
 		// agent_r[0] = (3 + rand()%2)/10.0;
 		// agent_r[1] = agent_r[0];

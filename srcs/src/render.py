@@ -49,7 +49,7 @@ class Renderer:
 		self.fps = 120
 
 		self.pi = self.train(num_timesteps=1)
-		U.load_state("../data/ckpt/network/1228/5.0")
+		U.load_state("../data/ckpt/network/0102/8.0")
 		self.env = self.make_env()
 		ob = self.env.reset()
 		self.setEnvironment(SCENARIO)

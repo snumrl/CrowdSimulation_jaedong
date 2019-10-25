@@ -53,7 +53,9 @@ source /path/to/venv/bin/activate
 ```
 - tensorflow(https://pytorch.org/)
 
-(https://www.tensorflow.org/install/pip)
+```bash
+https://www.tensorflow.org/install/pip)
+```
 
 - numpy, matplotlib
 

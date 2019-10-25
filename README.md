@@ -72,7 +72,6 @@ cmake ..
 make -j8
 ```
 
-/////////////////////////////////////
 - Run PPO
 ```bash
 cd ../pymss
@@ -87,4 +86,4 @@ python3 PPO.py
 - Run Trained data
 ```bash
 ./render/render ../nn/xxx.pt
-////////////////////////////////////```
+```

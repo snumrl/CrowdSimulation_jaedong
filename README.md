@@ -1,4 +1,4 @@
-# CSRL(Crowd Simulation by Deep Reinforcement Learning)
+# Crowd Simulation by Deep Reinforcement Learning
 
 ## Abstract
 

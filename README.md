@@ -51,10 +51,10 @@ You should first activate virtualenv.
 virtualenv /path/to/venv --python=python3
 source /path/to/venv/bin/activate
 ```
-- tensorflow (https://www.tensorflow.org)
 
+- tensorflow (https://www.tensorflow.org/install/pip)
 ```bash
-https://www.tensorflow.org/install/pip)
+pip install --upgrade tensorflow
 ```
 
 - numpy, matplotlib

@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This codes implement simulation of "Crowd Simulation by Deep Reinforcement Learning (http://mrl.snu.ac.kr/research/ProjectCrowdRL/crowdrl.htm)". 
+This codes implement the paper "Crowd Simulation by Deep Reinforcement Learning" (http://mrl.snu.ac.kr/research/ProjectCrowdRL/crowdrl.htm). 
 
 ## How to install
 
